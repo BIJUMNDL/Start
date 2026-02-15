@@ -1221,9 +1221,9 @@
             <div class="logo-section">
                 <div class="logo">
                     <div class="logo-icon"><i class="fas fa-microchip"></i></div>
-                    <div class="logo-text">NOKIA CARD MANAGEMENT SYSTEM</div>
+                    <div class="logo-text">NOKIA<span>.</span></div>
                 </div>
-                <div class="app-title"></div>
+                <div class="app-title">Card Management System</div>
             </div>
             <div class="header-stats">
                 <div class="db-status">
@@ -1293,8 +1293,8 @@
                         <div class="form-group">
                             <label class="form-label">RNR or Normal <span class="required">*</span></label>
                             <div class="toggle-group" id="addRnr">
-                                <button type="button" class="toggle-btn selected" data-value="RNR">RNR</button>
-                                <button type="button" class="toggle-btn" data-value="Normal">Normal</button>
+                                <button type="button" class="toggle-btn selected" data-value="Normal">Normal</button>
+                                <button type="button" class="toggle-btn" data-value="RNR">RNR</button>
                             </div>
                         </div>
                         <div class="form-group">
@@ -1388,8 +1388,8 @@
                             <div class="form-group">
                                 <label class="form-label">RNR or Normal <span class="required">*</span></label>
                                 <div class="toggle-group" id="editRnr">
-                                    <button type="button" class="toggle-btn" data-value="RNR">RNR</button>
                                     <button type="button" class="toggle-btn" data-value="Normal">Normal</button>
+                                    <button type="button" class="toggle-btn" data-value="RNR">RNR</button>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -1957,7 +1957,7 @@
             });
             document.getElementById('addBooking').value = today();
             setToggleValue('addCrit', 'critical');
-            setToggleValue('addRnr', 'RNR');
+            setToggleValue('addRnr', 'Normal');
         }
 
         // Search & Edit
