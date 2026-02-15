@@ -1,0 +1,2545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nokia Card Management System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --nokia-blue: #124191;
+            --nokia-dark: #0a2558;
+            --nokia-light: #1a5fc9;
+            --accent-cyan: #00c9e4;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-purple: #8b5cf6;
+            --bg-primary: #f8fafc;
+            --bg-secondary: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border-light: #e2e8f0;
+            --border-medium: #cbd5e1;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--nokia-dark) 0%, var(--nokia-blue) 50%, var(--nokia-light) 100%);
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 32px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: rgba(255,255,255,0.15);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo-icon i {
+            font-size: 20px;
+            color: var(--accent-cyan);
+        }
+
+        .logo-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text span {
+            color: var(--accent-cyan);
+        }
+
+        .app-title {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9rem;
+            font-weight: 400;
+            padding-left: 20px;
+            border-left: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius-md);
+            padding: 10px 20px;
+            text-align: center;
+            min-width: 90px;
+        }
+
+        .stat-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            line-height: 1.2;
+        }
+
+        .stat-value.open { color: var(--accent-orange); }
+        .stat-value.closed { color: var(--accent-green); }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        .db-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50px;
+            font-size: 0.75rem;
+            color: white;
+            margin-right: 16px;
+        }
+
+        .db-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-orange);
+            animation: pulse 2s infinite;
+        }
+
+        .db-dot.online { background: var(--accent-green); animation: none; }
+        .db-dot.offline { background: var(--accent-red); animation: none; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Navigation Tabs */
+        .nav-container {
+            background: rgba(0,0,0,0.2);
+            padding: 0 32px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 4px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .nav-tab {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 24px;
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.7);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            border-radius: var(--radius-md) var(--radius-md) 0 0;
+        }
+
+        .nav-tab i {
+            font-size: 1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .nav-tab:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-tab.active {
+            background: var(--bg-primary);
+            color: var(--nokia-blue);
+            font-weight: 600;
+        }
+
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-cyan);
+            border-radius: 3px 3px 0 0;
+        }
+
+        .nav-tab .lock-icon {
+            font-size: 0.7rem;
+            opacity: 0.7;
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        .view {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            padding: 20px 28px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(to right, var(--bg-secondary), var(--bg-card));
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-title i {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--nokia-blue), var(--nokia-light));
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .card-title.purple i {
+            background: linear-gradient(135deg, var(--accent-purple), #a78bfa);
+        }
+
+        .card-body {
+            padding: 28px;
+        }
+
+        /* Form Elements */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-label .required {
+            color: var(--accent-red);
+            font-weight: 700;
+        }
+
+        .form-input {
+            padding: 14px 16px;
+            background: var(--bg-secondary);
+            border: 2px solid transparent;
+            border-radius: var(--radius-md);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .form-input:hover {
+            border-color: var(--border-medium);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--nokia-blue);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(18, 65, 145, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* Toggle Buttons */
+        .toggle-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 2px solid transparent;
+            border-radius: var(--radius-md);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .toggle-btn:hover {
+            border-color: var(--border-medium);
+            background: white;
+        }
+
+        .toggle-btn.selected {
+            border-color: var(--nokia-blue);
+            background: rgba(18, 65, 145, 0.08);
+            color: var(--nokia-blue);
+            font-weight: 600;
+        }
+
+        .toggle-btn.critical.selected {
+            border-color: var(--accent-red);
+            background: rgba(239, 68, 68, 0.08);
+            color: var(--accent-red);
+        }
+
+        .toggle-btn.major.selected {
+            border-color: var(--accent-orange);
+            background: rgba(245, 158, 11, 0.08);
+            color: var(--accent-orange);
+        }
+
+        .toggle-btn.minor.selected {
+            border-color: var(--accent-green);
+            background: rgba(16, 185, 129, 0.08);
+            color: var(--accent-green);
+        }
+
+        .toggle-btn.received.selected {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 201, 228, 0.08);
+            color: #0891b2;
+        }
+
+        .toggle-btn.spare.selected {
+            border-color: var(--accent-green);
+            background: rgba(16, 185, 129, 0.08);
+            color: var(--accent-green);
+        }
+
+        .toggle-btn.used.selected {
+            border-color: var(--accent-purple);
+            background: rgba(139, 92, 246, 0.08);
+            color: var(--accent-purple);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 28px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--nokia-blue), var(--nokia-light));
+            color: white;
+            box-shadow: 0 4px 14px rgba(18, 65, 145, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(18, 65, 145, 0.4);
+        }
+
+        .btn-primary.purple {
+            background: linear-gradient(135deg, var(--accent-purple), #a78bfa);
+            box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-primary.purple:hover {
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 2px solid var(--border-light);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card);
+            border-color: var(--border-medium);
+        }
+
+        .btn-full {
+            width: 100%;
+            margin-top: 24px;
+            padding: 16px;
+        }
+
+        /* Info Box */
+        .info-box {
+            display: flex;
+            gap: 12px;
+            padding: 16px 20px;
+            background: linear-gradient(to right, rgba(139, 92, 246, 0.08), rgba(139, 92, 246, 0.02));
+            border-left: 4px solid var(--accent-purple);
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            margin-top: 24px;
+        }
+
+        .info-box i {
+            color: var(--accent-purple);
+            font-size: 1.1rem;
+            margin-top: 2px;
+        }
+
+        .info-box-content {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .info-box-content strong {
+            color: var(--text-primary);
+        }
+
+        /* Search Section */
+        .search-section {
+            margin-bottom: 24px;
+        }
+
+        .search-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .search-row .form-input {
+            flex: 1;
+        }
+
+        .btn-search {
+            padding: 14px 24px;
+            background: var(--nokia-blue);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-search:hover {
+            background: var(--nokia-dark);
+        }
+
+        .search-results {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            min-height: 150px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .search-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px;
+            color: var(--text-muted);
+        }
+
+        .search-placeholder i {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-light);
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .search-result-item:hover {
+            background: white;
+        }
+
+        .result-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .result-docket {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            color: var(--nokia-blue);
+        }
+
+        .result-details {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .result-badges {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Edit Header */
+        .edit-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: linear-gradient(to right, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.02));
+            border-left: 4px solid var(--accent-orange);
+            border-radius: 0 var(--radius-md) var(--radius-md) 0;
+            margin-bottom: 24px;
+        }
+
+        .edit-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .edit-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .edit-docket {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            color: var(--nokia-blue);
+            font-size: 1.1rem;
+        }
+
+        .btn-back {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: white;
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-back:hover {
+            border-color: var(--border-medium);
+            background: var(--bg-secondary);
+        }
+
+        /* Table */
+        .table-container {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+        }
+
+        .table-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-light);
+            background: linear-gradient(to right, var(--bg-secondary), var(--bg-card));
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .table-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-title i {
+            color: var(--nokia-blue);
+        }
+
+        .table-filters {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-input {
+            padding: 10px 14px;
+            background: white;
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            min-width: 150px;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--nokia-blue);
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+
+        th {
+            background: var(--nokia-blue);
+            color: white;
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        tr:hover td {
+            background: var(--bg-secondary);
+        }
+
+        .docket-number {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            color: var(--nokia-blue);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .badge.critical { background: rgba(239, 68, 68, 0.1); color: var(--accent-red); }
+        .badge.major { background: rgba(245, 158, 11, 0.1); color: var(--accent-orange); }
+        .badge.minor { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); }
+        .badge.open { background: rgba(245, 158, 11, 0.1); color: var(--accent-orange); }
+        .badge.closed { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); }
+        .badge.received { background: rgba(0, 201, 228, 0.1); color: #0891b2; }
+        .badge.spare { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); }
+        .badge.used { background: rgba(139, 92, 246, 0.1); color: var(--accent-purple); }
+        .badge.rnr { background: rgba(18, 65, 145, 0.1); color: var(--nokia-blue); }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn.close { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); }
+        .action-btn.close:hover { background: rgba(16, 185, 129, 0.2); }
+        .action-btn.reopen { background: rgba(245, 158, 11, 0.1); color: var(--accent-orange); }
+        .action-btn.reopen:hover { background: rgba(245, 158, 11, 0.2); }
+        .action-btn.edit { background: rgba(18, 65, 145, 0.1); color: var(--nokia-blue); }
+        .action-btn.edit:hover { background: rgba(18, 65, 145, 0.2); }
+        .action-btn.delete { background: rgba(239, 68, 68, 0.1); color: var(--accent-red); }
+        .action-btn.delete:hover { background: rgba(239, 68, 68, 0.2); }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: var(--text-muted);
+            opacity: 0.5;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Print Section */
+        .print-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .print-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: 24px;
+        }
+
+        .print-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .print-card h3 i {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .print-card h3 i.green { background: var(--accent-green); }
+        .print-card h3 i.orange { background: var(--accent-orange); }
+        .print-card h3 i.purple { background: var(--accent-purple); }
+
+        .print-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .print-row .form-group {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .btn-print {
+            padding: 12px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            transition: all 0.2s ease;
+        }
+
+        .btn-print.green { background: var(--accent-green); }
+        .btn-print.orange { background: var(--accent-orange); }
+        .btn-print.purple { background: var(--accent-purple); }
+
+        .btn-print:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Setup Section */
+        .setup-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .setup-steps {
+            background: linear-gradient(to right, rgba(18, 65, 145, 0.05), rgba(18, 65, 145, 0.02));
+            border-radius: var(--radius-md);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .setup-steps h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            color: var(--nokia-blue);
+        }
+
+        .setup-steps ol {
+            margin-left: 20px;
+            color: var(--text-secondary);
+        }
+
+        .setup-steps li {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .setup-steps a {
+            color: var(--nokia-blue);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .setup-steps a:hover {
+            text-decoration: underline;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+            box-shadow: var(--shadow-xl);
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        .modal-icon.delete { background: rgba(239, 68, 68, 0.1); color: var(--accent-red); }
+        .modal-icon.close { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); }
+        .modal-icon.auth { background: rgba(18, 65, 145, 0.1); color: var(--nokia-blue); }
+
+        .modal-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .modal-text {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .modal-docket {
+            font-weight: 700;
+            color: var(--nokia-blue);
+        }
+
+        .modal-input {
+            margin-bottom: 24px;
+        }
+
+        .modal-input input {
+            width: 100%;
+            padding: 14px;
+            text-align: center;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-md);
+        }
+
+        .modal-input input:focus {
+            outline: none;
+            border-color: var(--nokia-blue);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn.cancel {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+        }
+
+        .modal-btn.confirm-red {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .modal-btn.confirm-green {
+            background: var(--accent-green);
+            color: white;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%) translateY(120px);
+            padding: 16px 24px;
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-xl);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: transform 0.3s ease;
+            z-index: 1001;
+            max-width: 90%;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .toast.success .toast-icon {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-green);
+        }
+
+        .toast.error .toast-icon {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--accent-red);
+        }
+
+        .toast-message {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1002;
+            flex-direction: column;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            margin-top: 16px;
+            font-size: 0.95rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .header-top {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+
+            .logo-section {
+                flex-direction: column;
+            }
+
+            .app-title {
+                border-left: none;
+                padding-left: 0;
+            }
+
+            .header-stats {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .nav-tabs {
+                overflow-x: auto;
+                padding-bottom: 4px;
+            }
+
+            .nav-tab {
+                padding: 12px 16px;
+                white-space: nowrap;
+            }
+
+            .nav-tab span {
+                display: none;
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-top {
+                padding: 12px 16px;
+            }
+
+            .nav-container {
+                padding: 0 16px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-row {
+                flex-direction: column;
+            }
+
+            .print-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .table-filters {
+                width: 100%;
+            }
+
+            .filter-input {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-top">
+            <div class="logo-section">
+                <div class="logo">
+                    <div class="logo-icon"><i class="fas fa-microchip"></i></div>
+                    <div class="logo-text">NOKIA CARD MANAGEMENT SYSTEM</div>
+                </div>
+                <div class="app-title"></div>
+            </div>
+            <div class="header-stats">
+                <div class="db-status">
+                    <span class="db-dot" id="dbDot"></span>
+                    <span id="dbText">Connecting...</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statTotal">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value open" id="statOpen">0</div>
+                    <div class="stat-label">Open</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value closed" id="statClosed">0</div>
+                    <div class="stat-label">Closed</div>
+                </div>
+            </div>
+        </div>
+        <nav class="nav-container">
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-tab="add"><i class="fas fa-plus-circle"></i><span>New Docket</span></button>
+                <button class="nav-tab" data-tab="edit"><i class="fas fa-edit"></i><span>Edit Docket</span></button>
+                <button class="nav-tab" data-tab="view"><i class="fas fa-list-alt"></i><span>View Dockets</span></button>
+                <button class="nav-tab" data-tab="inv"><i class="fas fa-lock"></i><span>Inventory</span></button>
+                <button class="nav-tab" data-tab="print"><i class="fas fa-print"></i><span>Print</span></button>
+                <button class="nav-tab" data-tab="setup"><i class="fas fa-cog"></i><span>Setup</span></button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- New Docket View -->
+        <div class="view active" id="view-add">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-file-medical"></i>New Docket Entry</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Date of Booking <span class="required">*</span></label>
+                            <input type="date" class="form-input" id="addBooking">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Site Name <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="addSite" placeholder="Enter site name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Card Name <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="addCard" placeholder="Enter card name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Criticality <span class="required">*</span></label>
+                            <div class="toggle-group" id="addCrit">
+                                <button type="button" class="toggle-btn critical selected" data-value="critical">Critical</button>
+                                <button type="button" class="toggle-btn major" data-value="major">Major</button>
+                                <button type="button" class="toggle-btn minor" data-value="minor">Minor</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Faulty Serial Number <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="addFaulty" placeholder="Enter faulty S/N">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">RNR or Normal <span class="required">*</span></label>
+                            <div class="toggle-group" id="addRnr">
+                                <button type="button" class="toggle-btn selected" data-value="RNR">RNR</button>
+                                <button type="button" class="toggle-btn" data-value="Normal">Normal</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Spare Card S/N (from Inventory)</label>
+                            <input type="text" class="form-input" id="addSpare" placeholder="Must be 'Spare' in inventory">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Date Sent to Nokia Warehouse</label>
+                            <input type="date" class="form-input" id="addSent">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Date of Receipt of Replacement</label>
+                            <input type="date" class="form-input" id="addReceipt">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Replacement Card S/N (to close)</label>
+                            <input type="text" class="form-input" id="addReplacement" placeholder="Must be 'Received' in inventory">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Remarks</label>
+                            <input type="text" class="form-input" id="addRemarks" placeholder="Any additional notes">
+                        </div>
+                    </div>
+                    <div class="info-box">
+                        <i class="fas fa-info-circle"></i>
+                        <div class="info-box-content">
+                            <strong>Spare Card S/N</strong> (optional for open docket) - If entered, must exist in Inventory as "Spare". Changes to "Used" when saved.<br>
+                            <strong>Replacement Card S/N</strong> (optional for open docket) - If entered, must exist in Inventory as "Received". Changes to "Spare" and closes docket.<br>
+                            ⚠️ <strong>To close a docket:</strong> Both Spare Card S/N and Replacement Card S/N are REQUIRED.
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-full" id="addBtn"><i class="fas fa-save"></i>Generate Docket & Save</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Docket View -->
+        <div class="view" id="view-edit">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-edit"></i>Edit Docket</h2>
+                    <span class="badge" style="background: rgba(18,65,145,0.1); color: var(--nokia-blue);"><i class="fas fa-lock" style="margin-right:6px;"></i>Password Required</span>
+                </div>
+                <div class="card-body">
+                    <div class="search-section" id="editSearch">
+                        <div class="search-row">
+                            <input type="text" class="form-input" id="editSearchInput" placeholder="Enter docket number (e.g., NOK-20250215-0001)">
+                            <button class="btn-search" id="editSearchBtn"><i class="fas fa-search"></i>Search</button>
+                        </div>
+                        <div class="search-results" id="editResults">
+                            <div class="search-placeholder">
+                                <i class="fas fa-search"></i>
+                                <p>Enter a docket number to search</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="editForm" style="display:none;">
+                        <div class="edit-header">
+                            <div class="edit-info">
+                                <span class="edit-label">Editing:</span>
+                                <span class="edit-docket" id="editDocketNum"></span>
+                                <span class="badge" id="editStatus"></span>
+                            </div>
+                            <button class="btn-back" id="editBackBtn"><i class="fas fa-arrow-left"></i>Back</button>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Date of Booking <span class="required">*</span></label>
+                                <input type="date" class="form-input" id="editBooking">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Site Name <span class="required">*</span></label>
+                                <input type="text" class="form-input" id="editSite" placeholder="Enter site name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Card Name <span class="required">*</span></label>
+                                <input type="text" class="form-input" id="editCard" placeholder="Enter card name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Criticality <span class="required">*</span></label>
+                                <div class="toggle-group" id="editCrit">
+                                    <button type="button" class="toggle-btn critical" data-value="critical">Critical</button>
+                                    <button type="button" class="toggle-btn major" data-value="major">Major</button>
+                                    <button type="button" class="toggle-btn minor" data-value="minor">Minor</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Faulty Serial Number <span class="required">*</span></label>
+                                <input type="text" class="form-input" id="editFaulty" placeholder="Enter faulty S/N">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">RNR or Normal <span class="required">*</span></label>
+                                <div class="toggle-group" id="editRnr">
+                                    <button type="button" class="toggle-btn" data-value="RNR">RNR</button>
+                                    <button type="button" class="toggle-btn" data-value="Normal">Normal</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Spare Card S/N</label>
+                                <input type="text" class="form-input" id="editSpare" placeholder="Spare S/N">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Date Sent to Nokia Warehouse</label>
+                                <input type="date" class="form-input" id="editSent">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Date of Receipt of Replacement</label>
+                                <input type="date" class="form-input" id="editReceipt">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Replacement Card S/N (to close)</label>
+                                <input type="text" class="form-input" id="editReplacement" placeholder="Must be 'Received' in inventory">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Remarks</label>
+                                <input type="text" class="form-input" id="editRemarks" placeholder="Any additional notes">
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <div class="info-box-content">
+                                ⚠️ <strong>To close this docket:</strong> Both Spare Card S/N and Replacement Card S/N are REQUIRED and must exist in Inventory with correct status.
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-full" id="editBtn"><i class="fas fa-save"></i>Update Docket</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Dockets -->
+        <div class="view" id="view-view">
+            <div class="table-container">
+                <div class="table-header">
+                    <h2 class="table-title"><i class="fas fa-clipboard-list"></i>Docket Records</h2>
+                    <div class="table-filters">
+                        <input type="text" class="filter-input" id="viewSearch" placeholder="🔍 Search...">
+                        <select class="filter-input" id="filterCrit">
+                            <option value="all">All Criticality</option>
+                            <option value="critical">Critical</option>
+                            <option value="major">Major</option>
+                            <option value="minor">Minor</option>
+                        </select>
+                        <select class="filter-input" id="filterStatus">
+                            <option value="all">All Status</option>
+                            <option value="open">Open</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-scroll" id="tableContainer"></div>
+            </div>
+        </div>
+
+        <!-- Inventory View -->
+        <div class="view" id="view-inv">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title purple"><i class="fas fa-boxes"></i>Add Inventory Item</h2>
+                </div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Date of Receipt <span class="required">*</span></label>
+                            <input type="date" class="form-input" id="invDate">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Card Name <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="invCard" placeholder="Enter card name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Serial Number <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="invSerial" placeholder="Enter serial number">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status <span class="required">*</span></label>
+                            <div class="toggle-group" id="invStatus">
+                                <button type="button" class="toggle-btn received selected" data-value="received">Received</button>
+                                <button type="button" class="toggle-btn spare" data-value="spare">Spare</button>
+                                <button type="button" class="toggle-btn used" data-value="used">Used</button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary purple btn-full" id="invAddBtn"><i class="fas fa-plus"></i>Add to Inventory</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h2 class="table-title"><i class="fas fa-warehouse" style="color:var(--accent-purple)"></i>Inventory List</h2>
+                    <div class="table-filters">
+                        <input type="text" class="filter-input" id="invSearch" placeholder="🔍 Search...">
+                        <select class="filter-input" id="invFilterStatus">
+                            <option value="all">All Status</option>
+                            <option value="received">Received</option>
+                            <option value="spare">Spare</option>
+                            <option value="used">Used</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-scroll" id="invTableContainer"></div>
+            </div>
+        </div>
+
+        <!-- Print View -->
+        <div class="view" id="view-print">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-print"></i>Print Reports</h2>
+                </div>
+                <div class="card-body">
+                    <div class="print-grid">
+                        <div class="print-card">
+                            <h3><i class="fas fa-check-circle green"></i>Closed Dockets Report</h3>
+                            <div class="print-row">
+                                <div class="form-group">
+                                    <label class="form-label">From Date</label>
+                                    <input type="date" class="form-input" id="printFromDate">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">To Date</label>
+                                    <input type="date" class="form-input" id="printToDate">
+                                </div>
+                            </div>
+                            <button class="btn-print green" id="printClosedBtn" style="margin-top:16px;width:100%;justify-content:center;"><i class="fas fa-print"></i>Print Closed Dockets</button>
+                        </div>
+                        <div class="print-card">
+                            <h3><i class="fas fa-clock orange"></i>Pending Dockets Report</h3>
+                            <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:16px;">Print all currently open/pending dockets</p>
+                            <button class="btn-print orange" id="printPendingBtn" style="width:100%;justify-content:center;"><i class="fas fa-print"></i>Print Pending Dockets</button>
+                        </div>
+                        <div class="print-card">
+                            <h3><i class="fas fa-boxes purple"></i>Inventory Report</h3>
+                            <div class="form-group" style="margin-bottom:16px;">
+                                <label class="form-label">Filter by Status</label>
+                                <select class="form-input" id="printInvStatus">
+                                    <option value="all">All Status</option>
+                                    <option value="received">Received</option>
+                                    <option value="spare">Spare</option>
+                                    <option value="used">Used</option>
+                                </select>
+                            </div>
+                            <button class="btn-print purple" id="printInvBtn" style="width:100%;justify-content:center;"><i class="fas fa-print"></i>Print Inventory</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Setup View -->
+        <div class="view" id="view-setup">
+            <div style="max-width:500px;margin:0 auto;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title"><i class="fas fa-shield-alt"></i>Admin Password</h2>
+                    </div>
+                    <div class="card-body">
+                        <p style="color:var(--text-secondary);margin-bottom:24px;line-height:1.7;">
+                            The admin password is required for:<br>
+                            • Editing dockets<br>
+                            • Deleting dockets<br>
+                            • Accessing Inventory
+                        </p>
+                        <div class="form-group" style="margin-bottom:16px;">
+                            <label class="form-label">Current Password <span class="required">*</span></label>
+                            <input type="password" class="form-input" id="oldPwdInput" placeholder="Enter current password">
+                        </div>
+                        <div class="form-group" style="margin-bottom:16px;">
+                            <label class="form-label">New Password <span class="required">*</span></label>
+                            <input type="password" class="form-input" id="newPwdInput" placeholder="Enter new password (min 4 characters)">
+                        </div>
+                        <div class="form-group" style="margin-bottom:24px;">
+                            <label class="form-label">Confirm New Password <span class="required">*</span></label>
+                            <input type="password" class="form-input" id="confirmPwdInput" placeholder="Confirm new password">
+                        </div>
+                        <button class="btn btn-primary btn-full" style="margin-top:0;" id="setPwdBtn"><i class="fas fa-key"></i>Change Password</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal">
+            <div class="modal-icon delete"><i class="fas fa-trash-alt"></i></div>
+            <h3 class="modal-title">Delete Docket</h3>
+            <p class="modal-text">Are you sure you want to delete <span class="modal-docket" id="deleteDocketNum"></span>?</p>
+            <div class="modal-input">
+                <input type="password" id="deletePwd" placeholder="Enter admin password">
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" id="deleteCancelBtn">Cancel</button>
+                <button class="modal-btn confirm-red" id="deleteConfirmBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="closeModal">
+        <div class="modal">
+            <div class="modal-icon close"><i class="fas fa-check-circle"></i></div>
+            <h3 class="modal-title">Close Docket</h3>
+            <p class="modal-text">Close docket <span class="modal-docket" id="closeDocketNum"></span>?</p>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" id="closeCancelBtn">Cancel</button>
+                <button class="modal-btn confirm-green" id="closeConfirmBtn">Close Docket</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="authModal">
+        <div class="modal">
+            <div class="modal-icon auth"><i class="fas fa-lock"></i></div>
+            <h3 class="modal-title">Authentication Required</h3>
+            <p class="modal-text">Enter admin password to continue</p>
+            <div class="modal-input">
+                <input type="password" id="authPwd" placeholder="Enter admin password">
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" id="authCancelBtn">Cancel</button>
+                <button class="modal-btn confirm-green" id="authConfirmBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <div class="toast-icon"><i class="fas fa-check"></i></div>
+        <span class="toast-message" id="toastMessage"></span>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-overlay" id="loading">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">Loading...</div>
+    </div>
+
+    <script>
+        // State
+        var R = [], INV = [], sb = null, isOnline = false, docketCounter = 1;
+        var editingId = null, pendingId = null, pendingEditId = null, pendingTab = null;
+        var ADMIN_PWD = localStorage.getItem('adminPwd') || 'admin123';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            var cfg = localStorage.getItem('sbCfg');
+            if (cfg) {
+                try { var c = JSON.parse(cfg); initSupabase(c.url, c.key); }
+                catch(e) { initDemo(); }
+            } else { initDemo(); }
+
+            document.getElementById('addBooking').value = today();
+            document.getElementById('invDate').value = today();
+
+            // Tab Navigation
+            document.querySelectorAll('.nav-tab').forEach(function(tab) {
+                tab.onclick = function() {
+                    var tabName = tab.dataset.tab;
+                    if (tabName === 'inv') {
+                        pendingTab = 'inv';
+                        showModal('authModal');
+                        setTimeout(function() { document.getElementById('authPwd').focus(); }, 100);
+                        return;
+                    }
+                    switchTab(tabName);
+                };
+            });
+
+            // Toggle Groups
+            setupToggle('addCrit');
+            setupToggle('addRnr');
+            setupToggle('editCrit');
+            setupToggle('editRnr');
+            setupToggle('invStatus');
+
+            // Event Listeners
+            document.getElementById('addBtn').onclick = addDocket;
+            document.getElementById('editSearchBtn').onclick = searchDocket;
+            document.getElementById('editSearchInput').onkeypress = function(e) { if(e.key==='Enter') searchDocket(); };
+            document.getElementById('editBackBtn').onclick = goBack;
+            document.getElementById('editBtn').onclick = updateDocket;
+            document.getElementById('viewSearch').oninput = renderDockets;
+            document.getElementById('filterCrit').onchange = renderDockets;
+            document.getElementById('filterStatus').onchange = renderDockets;
+            document.getElementById('invAddBtn').onclick = addInventory;
+            document.getElementById('invSearch').oninput = renderInventory;
+            document.getElementById('invFilterStatus').onchange = renderInventory;
+            document.getElementById('setPwdBtn').onclick = setPassword;
+            document.getElementById('printClosedBtn').onclick = printClosed;
+            document.getElementById('printPendingBtn').onclick = printPending;
+            document.getElementById('printInvBtn').onclick = printInventory;
+
+            // Modal Buttons
+            document.getElementById('deleteCancelBtn').onclick = function() { hideModal('deleteModal'); document.getElementById('deletePwd').value = ''; };
+            document.getElementById('deleteConfirmBtn').onclick = confirmDelete;
+            document.getElementById('deletePwd').onkeypress = function(e) { if(e.key==='Enter') confirmDelete(); };
+            document.getElementById('closeCancelBtn').onclick = function() { hideModal('closeModal'); };
+            document.getElementById('closeConfirmBtn').onclick = confirmClose;
+            document.getElementById('authCancelBtn').onclick = function() { hideModal('authModal'); document.getElementById('authPwd').value = ''; pendingEditId = null; pendingTab = null; };
+            document.getElementById('authConfirmBtn').onclick = confirmAuth;
+            document.getElementById('authPwd').onkeypress = function(e) { if(e.key==='Enter') confirmAuth(); };
+        });
+
+        // Utility Functions
+        function today() { return new Date().toISOString().split('T')[0]; }
+        function formatDate(d) { if (!d) return '-'; return new Date(d).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'}); }
+        function escapeHtml(t) { var div = document.createElement('div'); div.textContent = t || ''; return div.innerHTML; }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
+            document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
+            document.querySelector('.nav-tab[data-tab="'+tabName+'"]').classList.add('active');
+            document.getElementById('view-'+tabName).classList.add('active');
+            if (tabName === 'view') renderDockets();
+            if (tabName === 'inv') renderInventory();
+        }
+
+        function setupToggle(id) {
+            var group = document.getElementById(id);
+            if (!group) return;
+            group.querySelectorAll('.toggle-btn').forEach(function(btn) {
+                btn.onclick = function() {
+                    group.querySelectorAll('.toggle-btn').forEach(function(b) { b.classList.remove('selected'); });
+                    btn.classList.add('selected');
+                };
+            });
+        }
+
+        function getToggleValue(id) {
+            var sel = document.querySelector('#'+id+' .toggle-btn.selected');
+            return sel ? sel.dataset.value : '';
+        }
+
+        function setToggleValue(id, value) {
+            document.querySelectorAll('#'+id+' .toggle-btn').forEach(function(btn) {
+                btn.classList.toggle('selected', btn.dataset.value === value);
+            });
+        }
+
+        function showModal(id) { document.getElementById(id).classList.add('show'); }
+        function hideModal(id) { document.getElementById(id).classList.remove('show'); }
+        function showLoading(text) { document.getElementById('loadingText').textContent = text || 'Loading...'; document.getElementById('loading').classList.add('show'); }
+        function hideLoading() { document.getElementById('loading').classList.remove('show'); }
+
+        function showToast(message, isError) {
+            var toast = document.getElementById('toast');
+            var icon = toast.querySelector('.toast-icon i');
+            document.getElementById('toastMessage').textContent = message;
+            toast.className = 'toast show ' + (isError ? 'error' : 'success');
+            icon.className = isError ? 'fas fa-times' : 'fas fa-check';
+            setTimeout(function() { toast.classList.remove('show'); }, 4000);
+        }
+
+        function setDbStatus(online) {
+            var dot = document.getElementById('dbDot');
+            var text = document.getElementById('dbText');
+            dot.className = 'db-dot ' + (online ? 'online' : 'offline');
+            text.textContent = online ? 'Connected' : 'Demo Mode';
+        }
+
+        function updateStats() {
+            document.getElementById('statTotal').textContent = R.length;
+            var open = 0, closed = 0;
+            R.forEach(function(r) { if (r.status === 'closed') closed++; else open++; });
+            document.getElementById('statOpen').textContent = open;
+            document.getElementById('statClosed').textContent = closed;
+        }
+
+        function saveLocal() {
+            if (!isOnline) {
+                localStorage.setItem('dockets', JSON.stringify(R));
+                localStorage.setItem('inventory', JSON.stringify(INV));
+            }
+        }
+
+        function generateDocketNumber() {
+            var d = new Date();
+            var seq = String(docketCounter++).padStart(4, '0');
+            return 'NOK-' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + '-' + seq;
+        }
+
+        // Inventory Checks
+        function checkSpare(cardName, serial) {
+            return INV.find(function(i) {
+                return i.card_name.toLowerCase() === cardName.toLowerCase() &&
+                       i.serial_number.toLowerCase() === serial.toLowerCase() &&
+                       i.status === 'spare';
+            });
+        }
+
+        function checkReceived(cardName, serial) {
+            return INV.find(function(i) {
+                return i.card_name.toLowerCase() === cardName.toLowerCase() &&
+                       i.serial_number.toLowerCase() === serial.toLowerCase() &&
+                       i.status === 'received';
+            });
+        }
+
+        async function updateInventoryStatus(serial, newStatus, docketNum) {
+            var item = INV.find(function(i) { return i.serial_number.toLowerCase() === serial.toLowerCase(); });
+            if (!item) return;
+            item.status = newStatus;
+            if (docketNum) item.used_for_docket = docketNum;
+            if (isOnline) {
+                try { await sb.from('inventory').update({status: newStatus, used_for_docket: docketNum || null}).eq('id', item.id); }
+                catch(e) { console.error(e); }
+            } else { saveLocal(); }
+        }
+
+        // Database Functions
+        async function initSupabase(url, key) {
+            showLoading('Connecting to database...');
+            try {
+                sb = supabase.createClient(url, key);
+                var {data: d1, error: e1} = await sb.from('dockets').select('*').order('created_at', {ascending: false});
+                var {data: d2, error: e2} = await sb.from('inventory').select('*').order('created_at', {ascending: false});
+                if (e1) throw e1;
+                if (e2) throw e2;
+                R = d1 || [];
+                INV = d2 || [];
+                var maxCounter = 0;
+                R.forEach(function(r) {
+                    var match = (r.docket_number || '').match(/-(\d+)$/);
+                    if (match && parseInt(match[1]) > maxCounter) maxCounter = parseInt(match[1]);
+                });
+                docketCounter = maxCounter + 1;
+                isOnline = true;
+                setDbStatus(true);
+                updateStats();
+                renderDockets();
+                renderInventory();
+                hideLoading();
+                localStorage.setItem('sbCfg', JSON.stringify({url: url, key: key}));
+            } catch(e) {
+                hideLoading();
+                showToast('Connection failed: ' + e.message, true);
+                initDemo();
+            }
+        }
+
+        function initDemo() {
+            isOnline = false;
+            setDbStatus(false);
+            var savedDockets = localStorage.getItem('dockets');
+            var savedInv = localStorage.getItem('inventory');
+            if (savedDockets) {
+                try {
+                    R = JSON.parse(savedDockets);
+                    var maxCounter = 0;
+                    R.forEach(function(r) {
+                        var match = (r.docket_number || '').match(/-(\d+)$/);
+                        if (match && parseInt(match[1]) > maxCounter) maxCounter = parseInt(match[1]);
+                    });
+                    docketCounter = maxCounter + 1;
+                } catch(e) { R = []; }
+            }
+            if (savedInv) {
+                try { INV = JSON.parse(savedInv); } catch(e) { INV = []; }
+            }
+            updateStats();
+            hideLoading();
+        }
+
+        async function connectSupabase() {
+            var url = document.getElementById('configUrl').value.trim();
+            var key = document.getElementById('configKey').value.trim();
+            if (!url || !key) { showToast('Enter URL and Key', true); return; }
+            await initSupabase(url, key);
+            if (isOnline) { showToast('Connected successfully!'); switchTab('add'); }
+        }
+
+        // Authentication
+        function confirmAuth() {
+            var pwd = document.getElementById('authPwd').value;
+            if (pwd === ADMIN_PWD) {
+                hideModal('authModal');
+                document.getElementById('authPwd').value = '';
+                if (pendingEditId) { selectForEdit(pendingEditId); pendingEditId = null; }
+                if (pendingTab) { switchTab(pendingTab); pendingTab = null; }
+            } else {
+                showToast('Wrong password!', true);
+            }
+        }
+
+        function setPassword() {
+            var oldPwd = document.getElementById('oldPwdInput').value;
+            var newPwd = document.getElementById('newPwdInput').value.trim();
+            var confirmPwd = document.getElementById('confirmPwdInput').value.trim();
+            
+            if (!oldPwd) { showToast('Please enter current password', true); return; }
+            if (oldPwd !== ADMIN_PWD) { showToast('Current password is incorrect', true); return; }
+            if (!newPwd) { showToast('Please enter new password', true); return; }
+            if (newPwd.length < 4) { showToast('New password must be at least 4 characters', true); return; }
+            if (newPwd !== confirmPwd) { showToast('New passwords do not match', true); return; }
+            if (newPwd === oldPwd) { showToast('New password must be different from current password', true); return; }
+            
+            ADMIN_PWD = newPwd;
+            localStorage.setItem('adminPwd', newPwd);
+            showToast('Password changed successfully!');
+            document.getElementById('oldPwdInput').value = '';
+            document.getElementById('newPwdInput').value = '';
+            document.getElementById('confirmPwdInput').value = '';
+        }
+
+        // Add Docket
+        async function addDocket() {
+            var booking = document.getElementById('addBooking').value;
+            var site = document.getElementById('addSite').value.trim();
+            var card = document.getElementById('addCard').value.trim();
+            var faulty = document.getElementById('addFaulty').value.trim();
+
+            if (!booking || !site || !card || !faulty) {
+                showToast('Please fill all required fields', true);
+                return;
+            }
+
+            var spareSerial = document.getElementById('addSpare').value.trim();
+            var replSerial = document.getElementById('addReplacement').value.trim();
+            var status = 'open';
+
+            // Validation for closing
+            if (replSerial && replSerial.length > 0 && (!spareSerial || spareSerial.length === 0)) {
+                showToast('Spare Card S/N is required when closing docket', true);
+                return;
+            }
+
+            // Validate spare card if provided
+            if (spareSerial && spareSerial.length > 0) {
+                var spareItem = checkSpare(card, spareSerial);
+                if (!spareItem) {
+                    showToast('Spare card not found in inventory as "Spare" for: ' + card, true);
+                    return;
+                }
+            }
+
+            // Validate replacement card if provided
+            if (replSerial && replSerial.length > 0) {
+                var recvItem = checkReceived(card, replSerial);
+                if (!recvItem) {
+                    showToast('Replacement card not found in inventory as "Received" for: ' + card, true);
+                    return;
+                }
+                status = 'closed';
+            }
+
+            var docketNum = generateDocketNumber();
+            var record = {
+                docket_number: docketNum,
+                booking_date: booking,
+                site_name: site,
+                card_name: card,
+                criticality: getToggleValue('addCrit'),
+                faulty_serial: faulty,
+                rnr_type: getToggleValue('addRnr'),
+                spare_serial: spareSerial,
+                send_date: document.getElementById('addSent').value || null,
+                receipt_date: document.getElementById('addReceipt').value || null,
+                replacement_serial: replSerial,
+                remarks: document.getElementById('addRemarks').value.trim(),
+                status: status,
+                created_at: new Date().toISOString()
+            };
+
+            showLoading('Saving docket...');
+
+            if (isOnline) {
+                try {
+                    var {data, error} = await sb.from('dockets').insert([record]).select();
+                    if (error) throw error;
+                    R.unshift(data[0]);
+                    if (spareSerial) await updateInventoryStatus(spareSerial, 'used', docketNum);
+                    if (replSerial) await updateInventoryStatus(replSerial, 'spare', null);
+                    updateStats();
+                    hideLoading();
+                    showToast('Docket ' + docketNum + ' created!' + (status === 'closed' ? ' (Closed)' : ''));
+                    resetAddForm();
+                } catch(e) {
+                    hideLoading();
+                    showToast('Error: ' + e.message, true);
+                }
+            } else {
+                record.id = Date.now();
+                R.unshift(record);
+                if (spareSerial) updateInventoryStatus(spareSerial, 'used', docketNum);
+                if (replSerial) updateInventoryStatus(replSerial, 'spare', null);
+                saveLocal();
+                updateStats();
+                hideLoading();
+                showToast('Docket ' + docketNum + ' created!' + (status === 'closed' ? ' (Closed)' : ''));
+                resetAddForm();
+            }
+        }
+
+        function resetAddForm() {
+            ['addSite', 'addCard', 'addFaulty', 'addSpare', 'addSent', 'addReceipt', 'addReplacement', 'addRemarks'].forEach(function(id) {
+                document.getElementById(id).value = '';
+            });
+            document.getElementById('addBooking').value = today();
+            setToggleValue('addCrit', 'critical');
+            setToggleValue('addRnr', 'RNR');
+        }
+
+        // Search & Edit
+        function searchDocket() {
+            var query = document.getElementById('editSearchInput').value.toLowerCase().trim();
+            var container = document.getElementById('editResults');
+
+            if (!query) {
+                container.innerHTML = '<div class="search-placeholder"><i class="fas fa-search"></i><p>Enter a docket number to search</p></div>';
+                return;
+            }
+
+            var filtered = R.filter(function(r) {
+                return (r.docket_number || '').toLowerCase().includes(query);
+            });
+
+            if (!filtered.length) {
+                container.innerHTML = '<div class="search-placeholder"><i class="fas fa-frown"></i><p>No docket found</p></div>';
+                return;
+            }
+
+            var html = '';
+            filtered.forEach(function(r) {
+                html += '<div class="search-result-item" onclick="authForEdit(\'' + r.id + '\')">' +
+                    '<div class="result-info">' +
+                    '<span class="result-docket">' + r.docket_number + '</span>' +
+                    '<span class="result-details">' + escapeHtml(r.site_name) + ' • ' + escapeHtml(r.card_name) + '</span>' +
+                    '</div>' +
+                    '<div class="result-badges">' +
+                    '<span class="badge ' + r.criticality + '">' + r.criticality + '</span>' +
+                    '<span class="badge ' + r.status + '">' + r.status + '</span>' +
+                    '</div></div>';
+            });
+            container.innerHTML = html;
+        }
+
+        function authForEdit(id) {
+            pendingEditId = id;
+            showModal('authModal');
+            setTimeout(function() { document.getElementById('authPwd').focus(); }, 100);
+        }
+
+        function selectForEdit(id) {
+            var record = R.find(function(r) { return r.id == id; });
+            if (!record) return;
+
+            editingId = id;
+            document.getElementById('editSearch').style.display = 'none';
+            document.getElementById('editForm').style.display = 'block';
+            document.getElementById('editDocketNum').textContent = record.docket_number;
+            var statusBadge = document.getElementById('editStatus');
+            statusBadge.textContent = record.status;
+            statusBadge.className = 'badge ' + record.status;
+
+            document.getElementById('editBooking').value = record.booking_date;
+            document.getElementById('editSite').value = record.site_name;
+            document.getElementById('editCard').value = record.card_name;
+            document.getElementById('editFaulty').value = record.faulty_serial;
+            document.getElementById('editSpare').value = record.spare_serial || '';
+            document.getElementById('editSent').value = record.send_date || '';
+            document.getElementById('editReceipt').value = record.receipt_date || '';
+            document.getElementById('editReplacement').value = record.replacement_serial || '';
+            document.getElementById('editRemarks').value = record.remarks || '';
+            setToggleValue('editCrit', record.criticality);
+            setToggleValue('editRnr', record.rnr_type);
+        }
+
+        function goBack() {
+            editingId = null;
+            document.getElementById('editForm').style.display = 'none';
+            document.getElementById('editSearch').style.display = 'block';
+            document.getElementById('editSearchInput').value = '';
+            document.getElementById('editResults').innerHTML = '<div class="search-placeholder"><i class="fas fa-search"></i><p>Enter a docket number to search</p></div>';
+        }
+
+        async function updateDocket() {
+            if (!editingId) return;
+
+            var original = R.find(function(r) { return r.id == editingId; });
+            var booking = document.getElementById('editBooking').value;
+            var site = document.getElementById('editSite').value.trim();
+            var card = document.getElementById('editCard').value.trim();
+            var faulty = document.getElementById('editFaulty').value.trim();
+
+            if (!booking || !site || !card || !faulty) {
+                showToast('Please fill all required fields', true);
+                return;
+            }
+
+            var spareSerial = document.getElementById('editSpare').value.trim();
+            var replSerial = document.getElementById('editReplacement').value.trim();
+            var newStatus = original.status;
+
+            // Validation for closing
+            if (replSerial && replSerial.length > 0 && original.status === 'open' && (!spareSerial || spareSerial.length === 0)) {
+                showToast('Spare Card S/N is required when closing docket', true);
+                return;
+            }
+
+            // Validate new spare card if changed
+            if (spareSerial && spareSerial.length > 0 && spareSerial !== original.spare_serial) {
+                var spareItem = checkSpare(card, spareSerial);
+                if (!spareItem) {
+                    showToast('Spare card not found in inventory as "Spare" for: ' + card, true);
+                    return;
+                }
+            }
+
+            // Validate replacement card if provided
+            if (replSerial && replSerial.length > 0 && original.status === 'open') {
+                var recvItem = checkReceived(card, replSerial);
+                if (!recvItem) {
+                    showToast('Replacement card not found in inventory as "Received" for: ' + card, true);
+                    return;
+                }
+                newStatus = 'closed';
+            }
+
+            var updateData = {
+                booking_date: booking,
+                site_name: site,
+                card_name: card,
+                criticality: getToggleValue('editCrit'),
+                faulty_serial: faulty,
+                rnr_type: getToggleValue('editRnr'),
+                spare_serial: spareSerial,
+                send_date: document.getElementById('editSent').value || null,
+                receipt_date: document.getElementById('editReceipt').value || null,
+                replacement_serial: replSerial,
+                remarks: document.getElementById('editRemarks').value.trim(),
+                status: newStatus
+            };
+
+            showLoading('Updating docket...');
+
+            if (isOnline) {
+                try {
+                    var {error} = await sb.from('dockets').update(updateData).eq('id', editingId);
+                    if (error) throw error;
+                    if (spareSerial && spareSerial !== original.spare_serial) {
+                        await updateInventoryStatus(spareSerial, 'used', original.docket_number);
+                    }
+                    if (replSerial && original.status === 'open' && newStatus === 'closed') {
+                        await updateInventoryStatus(replSerial, 'spare', null);
+                    }
+                    Object.assign(original, updateData);
+                    updateStats();
+                    hideLoading();
+                    showToast('Docket updated!' + (newStatus === 'closed' && original.status === 'open' ? ' Docket closed!' : ''));
+                    goBack();
+                } catch(e) {
+                    hideLoading();
+                    showToast('Error: ' + e.message, true);
+                }
+            } else {
+                if (spareSerial && spareSerial !== original.spare_serial) {
+                    updateInventoryStatus(spareSerial, 'used', original.docket_number);
+                }
+                if (replSerial && original.status === 'open' && newStatus === 'closed') {
+                    updateInventoryStatus(replSerial, 'spare', null);
+                }
+                Object.assign(original, updateData);
+                saveLocal();
+                updateStats();
+                hideLoading();
+                showToast('Docket updated!' + (newStatus === 'closed' ? ' Docket closed!' : ''));
+                goBack();
+            }
+        }
+
+        // Render Dockets Table
+        function renderDockets() {
+            var query = document.getElementById('viewSearch').value.toLowerCase();
+            var critFilter = document.getElementById('filterCrit').value;
+            var statusFilter = document.getElementById('filterStatus').value;
+
+            var filtered = R.filter(function(r) {
+                var matchSearch = (r.docket_number || '').toLowerCase().includes(query) ||
+                                  (r.site_name || '').toLowerCase().includes(query) ||
+                                  (r.card_name || '').toLowerCase().includes(query) ||
+                                  (r.faulty_serial || '').toLowerCase().includes(query);
+                var matchCrit = critFilter === 'all' || r.criticality === critFilter;
+                var matchStatus = statusFilter === 'all' || r.status === statusFilter;
+                return matchSearch && matchCrit && matchStatus;
+            });
+
+            var container = document.getElementById('tableContainer');
+
+            if (!filtered.length) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-clipboard"></i><h3>No dockets found</h3></div>';
+                return;
+            }
+
+            filtered.sort(function(a, b) { return new Date(b.booking_date) - new Date(a.booking_date); });
+
+            var html = '<table><thead><tr>' +
+                '<th>Docket No.</th><th>Status</th><th>Date</th><th>Site</th><th>Card</th>' +
+                '<th>Criticality</th><th>Faulty S/N</th><th>Spare S/N</th><th>Repl. S/N</th><th>Actions</th>' +
+                '</tr></thead><tbody>';
+
+            filtered.forEach(function(r) {
+                var actions = '<div class="action-buttons">';
+                actions += r.status === 'open' ?
+                    '<button class="action-btn close" onclick="showCloseModal(\'' + r.id + '\')">Close</button>' :
+                    '<button class="action-btn reopen" onclick="reopenDocket(\'' + r.id + '\')">Reopen</button>';
+                actions += '<button class="action-btn edit" onclick="goToEdit(\'' + r.id + '\')">Edit</button>';
+                actions += '<button class="action-btn delete" onclick="showDeleteModal(\'' + r.id + '\')">Delete</button></div>';
+
+                html += '<tr>' +
+                    '<td><span class="docket-number">' + r.docket_number + '</span></td>' +
+                    '<td><span class="badge ' + r.status + '">' + r.status + '</span></td>' +
+                    '<td>' + formatDate(r.booking_date) + '</td>' +
+                    '<td>' + escapeHtml(r.site_name) + '</td>' +
+                    '<td>' + escapeHtml(r.card_name) + '</td>' +
+                    '<td><span class="badge ' + r.criticality + '">' + r.criticality + '</span></td>' +
+                    '<td>' + escapeHtml(r.faulty_serial) + '</td>' +
+                    '<td>' + (r.spare_serial || '-') + '</td>' +
+                    '<td>' + (r.replacement_serial || '-') + '</td>' +
+                    '<td>' + actions + '</td></tr>';
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function goToEdit(id) {
+            pendingEditId = id;
+            showModal('authModal');
+            setTimeout(function() { document.getElementById('authPwd').focus(); }, 100);
+        }
+
+        function showDeleteModal(id) {
+            pendingId = id;
+            var record = R.find(function(r) { return r.id == id; });
+            document.getElementById('deleteDocketNum').textContent = record ? record.docket_number : '';
+            showModal('deleteModal');
+            setTimeout(function() { document.getElementById('deletePwd').focus(); }, 100);
+        }
+
+        async function confirmDelete() {
+            if (!pendingId) return;
+            var pwd = document.getElementById('deletePwd').value;
+            if (pwd !== ADMIN_PWD) { showToast('Wrong password!', true); return; }
+
+            var record = R.find(function(r) { return r.id == pendingId; });
+            var docketNum = record ? record.docket_number : '';
+
+            showLoading('Deleting...');
+
+            if (isOnline) {
+                try {
+                    var {error} = await sb.from('dockets').delete().eq('id', pendingId);
+                    if (error) throw error;
+                    R = R.filter(function(r) { return r.id != pendingId; });
+                    updateStats();
+                    renderDockets();
+                    hideLoading();
+                    showToast('Deleted ' + docketNum);
+                    hideModal('deleteModal');
+                    document.getElementById('deletePwd').value = '';
+                } catch(e) {
+                    hideLoading();
+                    showToast('Error: ' + e.message, true);
+                }
+            } else {
+                R = R.filter(function(r) { return r.id != pendingId; });
+                saveLocal();
+                updateStats();
+                renderDockets();
+                hideLoading();
+                showToast('Deleted ' + docketNum);
+                hideModal('deleteModal');
+                document.getElementById('deletePwd').value = '';
+            }
+            pendingId = null;
+        }
+
+        function showCloseModal(id) {
+            pendingId = id;
+            var record = R.find(function(r) { return r.id == id; });
+            document.getElementById('closeDocketNum').textContent = record ? record.docket_number : '';
+            showModal('closeModal');
+        }
+
+        async function confirmClose() {
+            if (!pendingId) return;
+            var record = R.find(function(r) { return r.id == pendingId; });
+
+            if (!record.spare_serial || !record.replacement_serial) {
+                showToast('Spare Card S/N and Replacement Card S/N are required to close. Use Edit to add them.', true);
+                hideModal('closeModal');
+                pendingId = null;
+                return;
+            }
+
+            var docketNum = record.docket_number;
+            showLoading('Closing docket...');
+
+            if (isOnline) {
+                try {
+                    var {error} = await sb.from('dockets').update({status: 'closed'}).eq('id', pendingId);
+                    if (error) throw error;
+                    record.status = 'closed';
+                    updateStats();
+                    renderDockets();
+                    hideLoading();
+                    showToast('Closed ' + docketNum);
+                    hideModal('closeModal');
+                } catch(e) {
+                    hideLoading();
+                    showToast('Error: ' + e.message, true);
+                }
+            } else {
+                record.status = 'closed';
+                saveLocal();
+                updateStats();
+                renderDockets();
+                hideLoading();
+                showToast('Closed ' + docketNum);
+                hideModal('closeModal');
+            }
+            pendingId = null;
+        }
+
+        async function reopenDocket(id) {
+            var record = R.find(function(r) { return r.id == id; });
+            if (!record) return;
+            var docketNum = record.docket_number;
+
+            showLoading('Reopening...');
+
+            if (isOnline) {
+                try {
+                    var {error} = await sb.from('dockets').update({status: 'open'}).eq('id', id);
+                    if (error) throw error;
+                    record.status = 'open';
+                    updateStats();
+                    renderDockets();
+                    hideLoading();
+                    showToast('Reopened ' + docketNum);
+                } catch(e) {
+                    hideLoading();
+                    showToast('Error: ' + e.message, true);
+                }
+            } else {
+                record.status = 'open';
+                saveLocal();
+                updateStats();
+                renderDockets();
+                hideLoading();
+                showToast('Reopened ' + docketNum);
+            }
+        }
+
+        // Inventory Functions
+        async function addInventory() {
+            var date = document.getElementById('invDate').value;
+            var card = document.getElementById('invCard').value.trim();
+            var serial = document.getElementById('invSerial').value.trim();
+            var status = getToggleValue('invStatus');
+
+            if (!date || !card || !serial) {
+                showToast('Please fill all inventory fields', true);
+                return;
+            }
+
+            var exists = INV.find(function(i) { return i.serial_number.toLowerCase() === serial.toLowerCase(); });
+            if (exists) {
+                showToast('Serial number already exists in inventory!', true);
+                return;
+            }
+
+            var item = {
+                receipt_date: date,
+                card_name: card,
+                serial_number: serial,
+                status: status,
+                used_for_docket: null,
+                created_at: new Date().toISOString()
+            };
+
+            showLoading('Adding to inventory...');
+
+            if (isOnline) {
+                try {
+                    var {data, error} = await sb.from('inventory').insert([item]).select();
+                    if (error) throw error;
+                    INV.unshift(data[0]);
+                    hideLoading();
+                    showToast('Added to inventory!');
+                    renderInventory();
+                    document.getElementById('invCard').value = '';
+                    document.getElementById('invSerial').value = '';
+                    setToggleValue('invStatus', 'received');
+                } catch(e) {
+                    hideLoading();
+                    showToast('Error: ' + e.message, true);
+                }
+            } else {
+                item.id = Date.now();
+                INV.unshift(item);
+                saveLocal();
+                hideLoading();
+                showToast('Added to inventory!');
+                renderInventory();
+                document.getElementById('invCard').value = '';
+                document.getElementById('invSerial').value = '';
+                setToggleValue('invStatus', 'received');
+            }
+        }
+
+        function renderInventory() {
+            var query = document.getElementById('invSearch').value.toLowerCase();
+            var statusFilter = document.getElementById('invFilterStatus').value;
+
+            var filtered = INV.filter(function(i) {
+                var matchSearch = (i.card_name || '').toLowerCase().includes(query) ||
+                                  (i.serial_number || '').toLowerCase().includes(query);
+                var matchStatus = statusFilter === 'all' || i.status === statusFilter;
+                return matchSearch && matchStatus;
+            });
+
+            var container = document.getElementById('invTableContainer');
+
+            if (!filtered.length) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-boxes"></i><h3>No inventory items</h3></div>';
+                return;
+            }
+
+            filtered.sort(function(a, b) { return new Date(b.receipt_date) - new Date(a.receipt_date); });
+
+            var html = '<table style="min-width:700px"><thead><tr>' +
+                '<th>Receipt Date</th><th>Card Name</th><th>Serial Number</th><th>Status</th><th>Used For</th>' +
+                '</tr></thead><tbody>';
+
+            filtered.forEach(function(i) {
+                html += '<tr>' +
+                    '<td>' + formatDate(i.receipt_date) + '</td>' +
+                    '<td>' + escapeHtml(i.card_name) + '</td>' +
+                    '<td style="font-family:monospace;font-weight:600;">' + escapeHtml(i.serial_number) + '</td>' +
+                    '<td><span class="badge ' + i.status + '">' + i.status + '</span></td>' +
+                    '<td>' + (i.used_for_docket || '-') + '</td></tr>';
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Print Functions
+        function printClosed() {
+            var from = document.getElementById('printFromDate').value;
+            var to = document.getElementById('printToDate').value;
+            if (!from || !to) { showToast('Please select date range', true); return; }
+
+            var fromDate = new Date(from);
+            var toDate = new Date(to);
+            toDate.setHours(23, 59, 59);
+
+            var filtered = R.filter(function(r) {
+                if (r.status !== 'closed') return false;
+                var bookingDate = new Date(r.booking_date);
+                return bookingDate >= fromDate && bookingDate <= toDate;
+            });
+
+            if (!filtered.length) { showToast('No closed dockets in this date range', true); return; }
+            filtered.sort(function(a, b) { return new Date(a.booking_date) - new Date(b.booking_date); });
+            printDocketReport(filtered, 'Closed Dockets Report', 'From: ' + formatDate(from) + ' To: ' + formatDate(to));
+        }
+
+        function printPending() {
+            var filtered = R.filter(function(r) { return r.status === 'open'; });
+            if (!filtered.length) { showToast('No pending dockets', true); return; }
+            filtered.sort(function(a, b) { return new Date(a.booking_date) - new Date(b.booking_date); });
+            printDocketReport(filtered, 'Pending Dockets Report', 'As of: ' + formatDate(today()));
+        }
+
+        function printDocketReport(data, title, subtitle) {
+            var html = '<!DOCTYPE html><html><head><title>' + title + '</title>' +
+                '<style>body{font-family:Arial,sans-serif;padding:30px;color:#333}' +
+                'h1{color:#124191;margin:0;font-size:28px}h2{margin:8px 0 4px;font-weight:normal;font-size:18px}' +
+                '.header{text-align:center;margin-bottom:30px;padding-bottom:20px;border-bottom:3px solid #124191}' +
+                '.meta{color:#666;font-size:14px}' +
+                'table{width:100%;border-collapse:collapse;margin-top:20px;font-size:11px}' +
+                'th{background:#124191;color:white;padding:10px 8px;text-align:left;font-weight:600}' +
+                'td{padding:8px;border-bottom:1px solid #ddd}' +
+                'tr:nth-child(even){background:#f8f9fa}' +
+                '.docket{font-weight:bold;color:#124191}' +
+                '.footer{text-align:center;margin-top:30px;padding-top:20px;border-top:1px solid #ddd;color:#666;font-size:11px}' +
+                '</style></head><body>' +
+                '<div class="header"><h1>NOKIA</h1><h2>' + title + '</h2><p class="meta">' + subtitle + ' | Total: ' + data.length + ' records</p></div>' +
+                '<table><tr><th>Docket No.</th><th>Date</th><th>Site</th><th>Card</th><th>Criticality</th><th>Faulty S/N</th><th>Spare S/N</th><th>Repl. S/N</th><th>Remarks</th></tr>';
+
+            data.forEach(function(r) {
+                html += '<tr><td class="docket">' + r.docket_number + '</td><td>' + formatDate(r.booking_date) + '</td>' +
+                    '<td>' + escapeHtml(r.site_name) + '</td><td>' + escapeHtml(r.card_name) + '</td>' +
+                    '<td>' + r.criticality + '</td><td>' + escapeHtml(r.faulty_serial) + '</td>' +
+                    '<td>' + (r.spare_serial || '-') + '</td><td>' + (r.replacement_serial || '-') + '</td>' +
+                    '<td>' + (r.remarks || '-') + '</td></tr>';
+            });
+
+            html += '</table><div class="footer">Generated on ' + new Date().toLocaleString() + '</div></body></html>';
+
+            var win = window.open('', '_blank');
+            win.document.write(html);
+            win.document.close();
+            win.print();
+        }
+
+        function printInventory() {
+            var statusFilter = document.getElementById('printInvStatus').value;
+            var filtered = INV.filter(function(i) { return statusFilter === 'all' || i.status === statusFilter; });
+
+            if (!filtered.length) { showToast('No inventory items to print', true); return; }
+            filtered.sort(function(a, b) { return new Date(a.receipt_date) - new Date(b.receipt_date); });
+
+            var title = 'Inventory Report' + (statusFilter !== 'all' ? ' (' + statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1) + ')' : '');
+
+            var html = '<!DOCTYPE html><html><head><title>' + title + '</title>' +
+                '<style>body{font-family:Arial,sans-serif;padding:30px;color:#333}' +
+                'h1{color:#124191;margin:0;font-size:28px}h2{margin:8px 0 4px;font-weight:normal;font-size:18px}' +
+                '.header{text-align:center;margin-bottom:30px;padding-bottom:20px;border-bottom:3px solid #8b5cf6}' +
+                '.meta{color:#666;font-size:14px}' +
+                'table{width:100%;border-collapse:collapse;margin-top:20px;font-size:12px}' +
+                'th{background:#8b5cf6;color:white;padding:10px 8px;text-align:left;font-weight:600}' +
+                'td{padding:8px;border-bottom:1px solid #ddd}' +
+                'tr:nth-child(even){background:#f8f9fa}' +
+                '.serial{font-family:monospace;font-weight:bold}' +
+                '.footer{text-align:center;margin-top:30px;padding-top:20px;border-top:1px solid #ddd;color:#666;font-size:11px}' +
+                '</style></head><body>' +
+                '<div class="header"><h1>NOKIA</h1><h2>' + title + '</h2><p class="meta">As of: ' + formatDate(today()) + ' | Total: ' + filtered.length + ' items</p></div>' +
+                '<table><tr><th>Receipt Date</th><th>Card Name</th><th>Serial Number</th><th>Status</th><th>Used For Docket</th></tr>';
+
+            filtered.forEach(function(i) {
+                html += '<tr><td>' + formatDate(i.receipt_date) + '</td><td>' + escapeHtml(i.card_name) + '</td>' +
+                    '<td class="serial">' + escapeHtml(i.serial_number) + '</td><td>' + i.status + '</td>' +
+                    '<td>' + (i.used_for_docket || '-') + '</td></tr>';
+            });
+
+            html += '</table><div class="footer">Generated on ' + new Date().toLocaleString() + '</div></body></html>';
+
+            var win = window.open('', '_blank');
+            win.document.write(html);
+            win.document.close();
+            win.print();
+        }
+    </script>
+</body>
+</html>
