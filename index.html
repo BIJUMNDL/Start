@@ -1221,9 +1221,9 @@
             <div class="logo-section">
                 <div class="logo">
                     <div class="logo-icon"><i class="fas fa-microchip"></i></div>
-                    <div class="logo-text">NOKIA CARD MANAGEMENT SYSTEM</div>
+                    <div class="logo-text">NOKIA<span>.</span></div>
                 </div>
-                <div class="app-title"></div>
+                <div class="app-title">Card Management System</div>
             </div>
             <div class="header-stats">
                 <div class="db-status">
@@ -1638,13 +1638,14 @@
         var editingId = null, pendingId = null, pendingEditId = null, pendingTab = null;
         var ADMIN_PWD = localStorage.getItem('adminPwd') || 'admin123';
 
+        // Hardcoded Supabase credentials
+        var SUPABASE_URL = 'https://brchaucvtpatgtvrsjct.supabase.co';
+        var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJyY2hhdWN2dHBhdGd0dnJzamN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExMDEyMzMsImV4cCI6MjA4NjY3NzIzM30.LF9lcVaAu1o5MzvrOB2O5wll6l9_Wht2wgDHirWMWrA';
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            var cfg = localStorage.getItem('sbCfg');
-            if (cfg) {
-                try { var c = JSON.parse(cfg); initSupabase(c.url, c.key); }
-                catch(e) { initDemo(); }
-            } else { initDemo(); }
+            // Auto-connect to Supabase
+            initSupabase(SUPABASE_URL, SUPABASE_KEY);
 
             document.getElementById('addBooking').value = today();
             document.getElementById('invDate').value = today();
@@ -1752,7 +1753,7 @@
             var dot = document.getElementById('dbDot');
             var text = document.getElementById('dbText');
             dot.className = 'db-dot ' + (online ? 'online' : 'offline');
-            text.textContent = online ? 'Connected' : 'Demo Mode';
+            text.textContent = online ? 'Connected' : 'Disconnected';
         }
 
         function updateStats() {
@@ -1761,13 +1762,6 @@
             R.forEach(function(r) { if (r.status === 'closed') closed++; else open++; });
             document.getElementById('statOpen').textContent = open;
             document.getElementById('statClosed').textContent = closed;
-        }
-
-        function saveLocal() {
-            if (!isOnline) {
-                localStorage.setItem('dockets', JSON.stringify(R));
-                localStorage.setItem('inventory', JSON.stringify(INV));
-            }
         }
 
         function generateDocketNumber() {
@@ -1801,7 +1795,7 @@
             if (isOnline) {
                 try { await sb.from('inventory').update({status: newStatus, used_for_docket: docketNum || null}).eq('id', item.id); }
                 catch(e) { console.error(e); }
-            } else { saveLocal(); }
+            }
         }
 
         // Database Functions
@@ -1827,35 +1821,11 @@
                 renderDockets();
                 renderInventory();
                 hideLoading();
-                localStorage.setItem('sbCfg', JSON.stringify({url: url, key: key}));
             } catch(e) {
                 hideLoading();
                 showToast('Connection failed: ' + e.message, true);
-                initDemo();
+                setDbStatus(false);
             }
-        }
-
-        function initDemo() {
-            isOnline = false;
-            setDbStatus(false);
-            var savedDockets = localStorage.getItem('dockets');
-            var savedInv = localStorage.getItem('inventory');
-            if (savedDockets) {
-                try {
-                    R = JSON.parse(savedDockets);
-                    var maxCounter = 0;
-                    R.forEach(function(r) {
-                        var match = (r.docket_number || '').match(/-(\d+)$/);
-                        if (match && parseInt(match[1]) > maxCounter) maxCounter = parseInt(match[1]);
-                    });
-                    docketCounter = maxCounter + 1;
-                } catch(e) { R = []; }
-            }
-            if (savedInv) {
-                try { INV = JSON.parse(savedInv); } catch(e) { INV = []; }
-            }
-            updateStats();
-            hideLoading();
         }
 
         async function connectSupabase() {
@@ -1976,15 +1946,8 @@
                     showToast('Error: ' + e.message, true);
                 }
             } else {
-                record.id = Date.now();
-                R.unshift(record);
-                if (spareSerial) updateInventoryStatus(spareSerial, 'used', docketNum);
-                if (replSerial) updateInventoryStatus(replSerial, 'spare', null);
-                saveLocal();
-                updateStats();
                 hideLoading();
-                showToast('Docket ' + docketNum + ' created!' + (status === 'closed' ? ' (Closed)' : ''));
-                resetAddForm();
+                showToast('Database not connected', true);
             }
         }
 
@@ -2150,18 +2113,8 @@
                     showToast('Error: ' + e.message, true);
                 }
             } else {
-                if (spareSerial && spareSerial !== original.spare_serial) {
-                    updateInventoryStatus(spareSerial, 'used', original.docket_number);
-                }
-                if (replSerial && original.status === 'open' && newStatus === 'closed') {
-                    updateInventoryStatus(replSerial, 'spare', null);
-                }
-                Object.assign(original, updateData);
-                saveLocal();
-                updateStats();
                 hideLoading();
-                showToast('Docket updated!' + (newStatus === 'closed' ? ' Docket closed!' : ''));
-                goBack();
+                showToast('Database not connected', true);
             }
         }
 
@@ -2260,14 +2213,8 @@
                     showToast('Error: ' + e.message, true);
                 }
             } else {
-                R = R.filter(function(r) { return r.id != pendingId; });
-                saveLocal();
-                updateStats();
-                renderDockets();
                 hideLoading();
-                showToast('Deleted ' + docketNum);
-                hideModal('deleteModal');
-                document.getElementById('deletePwd').value = '';
+                showToast('Database not connected', true);
             }
             pendingId = null;
         }
@@ -2308,13 +2255,8 @@
                     showToast('Error: ' + e.message, true);
                 }
             } else {
-                record.status = 'closed';
-                saveLocal();
-                updateStats();
-                renderDockets();
                 hideLoading();
-                showToast('Closed ' + docketNum);
-                hideModal('closeModal');
+                showToast('Database not connected', true);
             }
             pendingId = null;
         }
@@ -2340,12 +2282,8 @@
                     showToast('Error: ' + e.message, true);
                 }
             } else {
-                record.status = 'open';
-                saveLocal();
-                updateStats();
-                renderDockets();
                 hideLoading();
-                showToast('Reopened ' + docketNum);
+                showToast('Database not connected', true);
             }
         }
 
@@ -2394,15 +2332,8 @@
                     showToast('Error: ' + e.message, true);
                 }
             } else {
-                item.id = Date.now();
-                INV.unshift(item);
-                saveLocal();
                 hideLoading();
-                showToast('Added to inventory!');
-                renderInventory();
-                document.getElementById('invCard').value = '';
-                document.getElementById('invSerial').value = '';
-                setToggleValue('invStatus', 'received');
+                showToast('Database not connected', true);
             }
         }
 
