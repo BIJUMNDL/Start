@@ -364,6 +364,207 @@
             color: var(--text-muted);
         }
 
+        /* Card Selector Dropdown - NEW FEATURE */
+        .card-selector {
+            position: relative;
+        }
+
+        .card-selector-input {
+            width: 100%;
+            padding: 14px 16px;
+            padding-right: 40px;
+            background: var(--bg-secondary);
+            border: 2px solid transparent;
+            border-radius: var(--radius-md);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .card-selector-input:hover {
+            border-color: var(--border-medium);
+        }
+
+        .card-selector-input:focus {
+            outline: none;
+            border-color: var(--nokia-blue);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(18, 65, 145, 0.1);
+        }
+
+        .card-selector-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .card-selector-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+            transition: transform 0.2s ease;
+        }
+
+        .card-selector.open .card-selector-toggle {
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        .card-selector-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border: 2px solid var(--nokia-blue);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            max-height: 280px;
+            overflow-y: auto;
+            z-index: 50;
+            display: none;
+        }
+
+        .card-selector.open .card-selector-dropdown {
+            display: block;
+            animation: dropdownFadeIn 0.2s ease;
+        }
+
+        @keyframes dropdownFadeIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-selector-header {
+            padding: 12px 16px;
+            background: linear-gradient(to right, var(--bg-secondary), var(--bg-card));
+            border-bottom: 1px solid var(--border-light);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-selector-header i {
+            color: var(--nokia-blue);
+        }
+
+        .card-selector-header.spare i {
+            color: var(--accent-green);
+        }
+
+        .card-selector-header.received i {
+            color: var(--accent-cyan);
+        }
+
+        .card-selector-empty {
+            padding: 24px 16px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .card-selector-empty i {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            display: block;
+            opacity: 0.5;
+        }
+
+        .card-selector-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-light);
+            transition: background 0.15s ease;
+        }
+
+        .card-selector-item:last-child {
+            border-bottom: none;
+        }
+
+        .card-selector-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .card-selector-item.selected {
+            background: rgba(18, 65, 145, 0.08);
+        }
+
+        .card-selector-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .card-selector-item-serial {
+            font-family: 'Space Grotesk', monospace;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .card-selector-item-details {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .card-selector-item-badge {
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .card-selector-item-badge.spare {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-green);
+        }
+
+        .card-selector-item-badge.received {
+            background: rgba(0, 201, 228, 0.1);
+            color: #0891b2;
+        }
+
+        .card-selector-hint {
+            padding: 10px 16px;
+            background: rgba(245, 158, 11, 0.08);
+            border-top: 1px solid var(--border-light);
+            font-size: 0.75rem;
+            color: var(--accent-orange);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-selector-clear {
+            padding: 10px 16px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-light);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .card-selector-clear:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--accent-red);
+        }
+
         /* Toggle Buttons */
         .toggle-group {
             display: flex;
@@ -799,19 +1000,22 @@
 
         /* Empty State */
         .empty-state {
-            text-align: center;
-            padding: 60px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 64px 32px;
+            color: var(--text-muted);
         }
 
         .empty-state i {
-            font-size: 3rem;
-            color: var(--text-muted);
-            opacity: 0.5;
+            font-size: 4rem;
             margin-bottom: 16px;
+            opacity: 0.3;
         }
 
         .empty-state h3 {
-            color: var(--text-secondary);
+            font-size: 1.1rem;
             font-weight: 500;
         }
 
@@ -826,6 +1030,12 @@
             background: var(--bg-secondary);
             border-radius: var(--radius-md);
             padding: 24px;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .print-card:hover {
+            border-color: var(--border-medium);
         }
 
         .print-card h3 {
@@ -833,114 +1043,39 @@
             align-items: center;
             gap: 10px;
             font-size: 1rem;
-            margin-bottom: 20px;
-            color: var(--text-primary);
+            margin-bottom: 16px;
         }
 
-        .print-card h3 i {
-            width: 32px;
-            height: 32px;
-            border-radius: var(--radius-sm);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-        }
-
-        .print-card h3 i.green { background: var(--accent-green); }
-        .print-card h3 i.orange { background: var(--accent-orange); }
-        .print-card h3 i.purple { background: var(--accent-purple); }
+        .print-card h3 i.green { color: var(--accent-green); }
+        .print-card h3 i.orange { color: var(--accent-orange); }
+        .print-card h3 i.purple { color: var(--accent-purple); }
 
         .print-row {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 12px;
-            align-items: flex-end;
-            flex-wrap: wrap;
-        }
-
-        .print-row .form-group {
-            flex: 1;
-            min-width: 120px;
         }
 
         .btn-print {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             padding: 12px 20px;
             border: none;
             border-radius: var(--radius-sm);
             font-weight: 600;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: white;
             transition: all 0.2s ease;
         }
 
-        .btn-print.green { background: var(--accent-green); }
-        .btn-print.orange { background: var(--accent-orange); }
-        .btn-print.purple { background: var(--accent-purple); }
+        .btn-print.green { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
+        .btn-print.green:hover { background: rgba(16, 185, 129, 0.25); }
+        .btn-print.orange { background: rgba(245, 158, 11, 0.15); color: var(--accent-orange); }
+        .btn-print.orange:hover { background: rgba(245, 158, 11, 0.25); }
+        .btn-print.purple { background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); }
+        .btn-print.purple:hover { background: rgba(139, 92, 246, 0.25); }
 
-        .btn-print:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-
-        /* Setup Section */
-        .setup-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 24px;
-        }
-
-        .setup-steps {
-            background: linear-gradient(to right, rgba(18, 65, 145, 0.05), rgba(18, 65, 145, 0.02));
-            border-radius: var(--radius-md);
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-
-        .setup-steps h3 {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            color: var(--nokia-blue);
-        }
-
-        .setup-steps ol {
-            margin-left: 20px;
-            color: var(--text-secondary);
-        }
-
-        .setup-steps li {
-            margin-bottom: 12px;
-            line-height: 1.6;
-        }
-
-        .setup-steps a {
-            color: var(--nokia-blue);
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        .setup-steps a:hover {
-            text-decoration: underline;
-        }
-
-        .config-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        /* Modals */
+        /* Modal */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -963,7 +1098,7 @@
             background: var(--bg-card);
             border-radius: var(--radius-lg);
             padding: 32px;
-            max-width: 420px;
+            max-width: 400px;
             width: 90%;
             text-align: center;
             box-shadow: var(--shadow-xl);
@@ -971,19 +1106,19 @@
         }
 
         @keyframes modalIn {
-            from { opacity: 0; transform: scale(0.95); }
+            from { opacity: 0; transform: scale(0.9); }
             to { opacity: 1; transform: scale(1); }
         }
 
         .modal-icon {
             width: 64px;
             height: 64px;
-            margin: 0 auto 20px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem;
+            font-size: 1.5rem;
+            margin: 0 auto 20px;
         }
 
         .modal-icon.delete { background: rgba(239, 68, 68, 0.1); color: var(--accent-red); }
@@ -991,9 +1126,7 @@
         .modal-icon.auth { background: rgba(18, 65, 145, 0.1); color: var(--nokia-blue); }
 
         .modal-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.25rem;
-            font-weight: 600;
+            font-size: 1.2rem;
             margin-bottom: 8px;
         }
 
@@ -1179,37 +1312,17 @@
             }
 
             .main-content {
-                padding: 20px;
+                padding: 16px;
             }
         }
 
-        @media (max-width: 768px) {
-            .header-top {
-                padding: 12px 16px;
-            }
-
-            .nav-container {
-                padding: 0 16px;
-            }
-
+        @media (max-width: 640px) {
             .form-grid {
                 grid-template-columns: 1fr;
             }
 
-            .search-row {
-                flex-direction: column;
-            }
-
-            .print-grid {
+            .print-row {
                 grid-template-columns: 1fr;
-            }
-
-            .table-filters {
-                width: 100%;
-            }
-
-            .filter-input {
-                flex: 1;
             }
         }
     </style>
@@ -1220,7 +1333,7 @@
         <div class="header-top">
             <div class="logo-section">
                 <div class="logo">
-                    <div class="logo-icon"><i class="fas fa-microchip"></i></div>
+                    <div class="logo-icon"><i class="fas fa-network-wired"></i></div>
                     <div class="logo-text">NOKIA CARD MANAGEMENT SYSTEM</div>
                 </div>
                 <div class="app-title"></div>
@@ -1298,8 +1411,16 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Spare Card S/N (from Inventory)</label>
-                            <input type="text" class="form-input" id="addSpare" placeholder="Must be 'Spare' in inventory">
+                            <label class="form-label">Spare Card S/N (from Inventory) <i class="fas fa-boxes" style="color:var(--accent-green);margin-left:4px;"></i></label>
+                            <div class="card-selector" id="addSpareSelector">
+                                <input type="text" class="card-selector-input" id="addSpare" placeholder="Select or type spare card S/N" autocomplete="off">
+                                <i class="fas fa-chevron-down card-selector-toggle"></i>
+                                <div class="card-selector-dropdown" id="addSpareDropdown">
+                                    <div class="card-selector-header spare"><i class="fas fa-boxes"></i>Available Spare Cards</div>
+                                    <div class="card-selector-list" id="addSpareList"></div>
+                                    <div class="card-selector-clear" onclick="clearCardSelector('addSpare')"><i class="fas fa-times"></i>Clear Selection</div>
+                                </div>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Date Sent to Nokia Warehouse</label>
@@ -1310,8 +1431,16 @@
                             <input type="date" class="form-input" id="addReceipt">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Replacement Card S/N (to close)</label>
-                            <input type="text" class="form-input" id="addReplacement" placeholder="Must be 'Received' in inventory">
+                            <label class="form-label">Replacement Card S/N (to close) <i class="fas fa-box-open" style="color:var(--accent-cyan);margin-left:4px;"></i></label>
+                            <div class="card-selector" id="addReplacementSelector">
+                                <input type="text" class="card-selector-input" id="addReplacement" placeholder="Select or type replacement card S/N" autocomplete="off">
+                                <i class="fas fa-chevron-down card-selector-toggle"></i>
+                                <div class="card-selector-dropdown" id="addReplacementDropdown">
+                                    <div class="card-selector-header received"><i class="fas fa-box-open"></i>Available Received Cards</div>
+                                    <div class="card-selector-list" id="addReplacementList"></div>
+                                    <div class="card-selector-clear" onclick="clearCardSelector('addReplacement')"><i class="fas fa-times"></i>Clear Selection</div>
+                                </div>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Remarks</label>
@@ -1321,8 +1450,8 @@
                     <div class="info-box">
                         <i class="fas fa-info-circle"></i>
                         <div class="info-box-content">
-                            <strong>Spare Card S/N</strong> (optional for open docket) - If entered, must exist in Inventory as "Spare". Changes to "Used" when saved.<br>
-                            <strong>Replacement Card S/N</strong> (optional for open docket) - If entered, must exist in Inventory as "Received". Changes to "Spare" and closes docket.<br>
+                            <strong>Spare Card S/N</strong> (optional for open docket) - Select from inventory or type manually. Must be "Spare" status. Changes to "Used" when saved.<br>
+                            <strong>Replacement Card S/N</strong> (optional for open docket) - Select from inventory or type manually. Must be "Received" status. Changes to "Spare" and closes docket.<br>
                             ⚠️ <strong>To close a docket:</strong> Both Spare Card S/N and Replacement Card S/N are REQUIRED.
                         </div>
                     </div>
@@ -1393,8 +1522,16 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Spare Card S/N</label>
-                                <input type="text" class="form-input" id="editSpare" placeholder="Spare S/N">
+                                <label class="form-label">Spare Card S/N <i class="fas fa-boxes" style="color:var(--accent-green);margin-left:4px;"></i></label>
+                                <div class="card-selector" id="editSpareSelector">
+                                    <input type="text" class="card-selector-input" id="editSpare" placeholder="Select or type spare card S/N" autocomplete="off">
+                                    <i class="fas fa-chevron-down card-selector-toggle"></i>
+                                    <div class="card-selector-dropdown" id="editSpareDropdown">
+                                        <div class="card-selector-header spare"><i class="fas fa-boxes"></i>Available Spare Cards</div>
+                                        <div class="card-selector-list" id="editSpareList"></div>
+                                        <div class="card-selector-clear" onclick="clearCardSelector('editSpare')"><i class="fas fa-times"></i>Clear Selection</div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Date Sent to Nokia Warehouse</label>
@@ -1405,8 +1542,16 @@
                                 <input type="date" class="form-input" id="editReceipt">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Replacement Card S/N (to close)</label>
-                                <input type="text" class="form-input" id="editReplacement" placeholder="Must be 'Received' in inventory">
+                                <label class="form-label">Replacement Card S/N (to close) <i class="fas fa-box-open" style="color:var(--accent-cyan);margin-left:4px;"></i></label>
+                                <div class="card-selector" id="editReplacementSelector">
+                                    <input type="text" class="card-selector-input" id="editReplacement" placeholder="Select or type replacement card S/N" autocomplete="off">
+                                    <i class="fas fa-chevron-down card-selector-toggle"></i>
+                                    <div class="card-selector-dropdown" id="editReplacementDropdown">
+                                        <div class="card-selector-header received"><i class="fas fa-box-open"></i>Available Received Cards</div>
+                                        <div class="card-selector-list" id="editReplacementList"></div>
+                                        <div class="card-selector-clear" onclick="clearCardSelector('editReplacement')"><i class="fas fa-times"></i>Clear Selection</div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Remarks</label>
@@ -1697,7 +1842,131 @@
             document.getElementById('authCancelBtn').onclick = function() { hideModal('authModal'); document.getElementById('authPwd').value = ''; pendingEditId = null; pendingTab = null; };
             document.getElementById('authConfirmBtn').onclick = confirmAuth;
             document.getElementById('authPwd').onkeypress = function(e) { if(e.key==='Enter') confirmAuth(); };
+
+            // Card Selector Setup
+            setupCardSelector('addSpare', 'spare', 'addCard');
+            setupCardSelector('addReplacement', 'received', 'addCard');
+            setupCardSelector('editSpare', 'spare', 'editCard');
+            setupCardSelector('editReplacement', 'received', 'editCard');
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.card-selector')) {
+                    closeAllCardSelectors();
+                }
+            });
         });
+
+        // Card Selector Functions - NEW FEATURE
+        function setupCardSelector(inputId, status, cardInputId) {
+            var selector = document.getElementById(inputId + 'Selector');
+            var input = document.getElementById(inputId);
+            var dropdown = document.getElementById(inputId + 'Dropdown');
+            var list = document.getElementById(inputId + 'List');
+
+            // Toggle dropdown on input click
+            input.addEventListener('click', function(e) {
+                e.stopPropagation();
+                closeAllCardSelectors();
+                populateCardList(inputId, status, cardInputId);
+                selector.classList.add('open');
+            });
+
+            // Filter on input
+            input.addEventListener('input', function() {
+                if (!selector.classList.contains('open')) {
+                    selector.classList.add('open');
+                }
+                populateCardList(inputId, status, cardInputId);
+            });
+
+            // Handle keyboard navigation
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    selector.classList.remove('open');
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    var firstItem = list.querySelector('.card-selector-item');
+                    if (firstItem) firstItem.focus();
+                }
+            });
+        }
+
+        function populateCardList(inputId, status, cardInputId) {
+            var list = document.getElementById(inputId + 'List');
+            var cardName = document.getElementById(cardInputId).value.trim().toLowerCase();
+            var searchValue = document.getElementById(inputId).value.trim().toLowerCase();
+
+            // Filter inventory by status and card name
+            var filtered = INV.filter(function(item) {
+                var matchStatus = item.status === status;
+                var matchCard = cardName === '' || item.card_name.toLowerCase().includes(cardName) || cardName.includes(item.card_name.toLowerCase());
+                var matchSearch = searchValue === '' || item.serial_number.toLowerCase().includes(searchValue) || item.card_name.toLowerCase().includes(searchValue);
+                return matchStatus && matchCard && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                var emptyMsg = cardName ? 'No ' + status + ' cards found for "' + escapeHtml(document.getElementById(cardInputId).value.trim()) + '"' : 'No ' + status + ' cards available';
+                list.innerHTML = '<div class="card-selector-empty"><i class="fas fa-box-open"></i>' + emptyMsg + '</div>';
+                
+                // Add hint if card name is empty
+                if (!cardName) {
+                    list.innerHTML += '<div class="card-selector-hint"><i class="fas fa-lightbulb"></i>Enter a Card Name first to filter available cards</div>';
+                }
+                return;
+            }
+
+            var html = '';
+            filtered.forEach(function(item) {
+                html += '<div class="card-selector-item" onclick="selectCard(\'' + inputId + '\', \'' + escapeHtml(item.serial_number) + '\')" tabindex="0">' +
+                    '<div class="card-selector-item-info">' +
+                    '<span class="card-selector-item-serial">' + escapeHtml(item.serial_number) + '</span>' +
+                    '<span class="card-selector-item-details">' + escapeHtml(item.card_name) + ' • ' + formatDate(item.receipt_date) + '</span>' +
+                    '</div>' +
+                    '<span class="card-selector-item-badge ' + status + '">' + status + '</span>' +
+                    '</div>';
+            });
+
+            list.innerHTML = html;
+
+            // Add keyboard navigation to items
+            list.querySelectorAll('.card-selector-item').forEach(function(item, index, items) {
+                item.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        item.click();
+                    } else if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (items[index + 1]) items[index + 1].focus();
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (items[index - 1]) {
+                            items[index - 1].focus();
+                        } else {
+                            document.getElementById(inputId).focus();
+                        }
+                    } else if (e.key === 'Escape') {
+                        document.getElementById(inputId + 'Selector').classList.remove('open');
+                        document.getElementById(inputId).focus();
+                    }
+                });
+            });
+        }
+
+        function selectCard(inputId, serial) {
+            document.getElementById(inputId).value = serial;
+            document.getElementById(inputId + 'Selector').classList.remove('open');
+        }
+
+        function clearCardSelector(inputId) {
+            document.getElementById(inputId).value = '';
+            document.getElementById(inputId + 'Selector').classList.remove('open');
+        }
+
+        function closeAllCardSelectors() {
+            document.querySelectorAll('.card-selector').forEach(function(sel) {
+                sel.classList.remove('open');
+            });
+        }
 
         // Utility Functions
         function today() { return new Date().toISOString().split('T')[0]; }
