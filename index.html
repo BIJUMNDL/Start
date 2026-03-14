@@ -1019,6 +1019,69 @@
             font-weight: 500;
         }
 
+        /* Inventory Dashboard */
+        .dashboard-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+
+        .dashboard-metric {
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            border: 1px solid var(--border-light);
+            background: var(--bg-secondary);
+        }
+
+        .dashboard-metric-label {
+            font-size: 0.75rem;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .dashboard-metric-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--text-primary);
+        }
+
+        .dashboard-metric.send-pending {
+            background: rgba(139, 92, 246, 0.08);
+            border-color: rgba(139, 92, 246, 0.2);
+        }
+
+        .dashboard-metric.send {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.25);
+        }
+
+        .dashboard-metric.received {
+            background: rgba(0, 201, 228, 0.08);
+            border-color: rgba(0, 201, 228, 0.25);
+        }
+
+        .dashboard-metric.spare {
+            background: rgba(16, 185, 129, 0.08);
+            border-color: rgba(16, 185, 129, 0.25);
+        }
+
+        .dashboard-metric.total {
+            background: rgba(18, 65, 145, 0.08);
+            border-color: rgba(18, 65, 145, 0.2);
+        }
+
+        .dashboard-count {
+            text-align: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
         /* Print Section */
         .print-grid {
             display: grid;
@@ -1362,7 +1425,8 @@
                 <button class="nav-tab active" data-tab="add"><i class="fas fa-plus-circle"></i><span>New Docket</span></button>
                 <button class="nav-tab" data-tab="edit"><i class="fas fa-edit"></i><span>Edit Docket</span></button>
                 <button class="nav-tab" data-tab="view"><i class="fas fa-list-alt"></i><span>View Dockets</span></button>
-                <button class="nav-tab" data-tab="inv"><i class="fas fa-lock"></i><span>Inventory</span></button>
+                <button class="nav-tab" data-tab="inv"><i class="fas fa-boxes"></i><span>Inventory</span></button>
+                <button class="nav-tab" data-tab="invdash"><i class="fas fa-chart-column"></i><span>Inventory Dashboard</span></button>
                 <button class="nav-tab" data-tab="print"><i class="fas fa-print"></i><span>Print</span></button>
                 <button class="nav-tab" data-tab="setup"><i class="fas fa-cog"></i><span>Setup</span></button>
             </div>
@@ -1644,6 +1708,19 @@
             </div>
         </div>
 
+        <!-- Inventory Dashboard View -->
+        <div class="view" id="view-invdash">
+            <div class="table-container">
+                <div class="table-header">
+                    <h2 class="table-title"><i class="fas fa-chart-line" style="color:var(--accent-green)"></i>Inventory Dashboard</h2>
+                </div>
+                <div class="card-body" style="padding-bottom:0;">
+                    <div class="dashboard-summary" id="invDashboardSummary"></div>
+                </div>
+                <div class="table-scroll" id="invDashboardContainer"></div>
+            </div>
+        </div>
+
         <!-- Print View -->
         <div class="view" id="view-print">
             <div class="card">
@@ -1699,9 +1776,8 @@
                     <div class="card-body">
                         <p style="color:var(--text-secondary);margin-bottom:24px;line-height:1.7;">
                             The admin password is required for:<br>
-                            • Editing dockets<br>
-                            • Deleting dockets<br>
-                            • Accessing Inventory
+                            • Editing dockets from View Dockets<br>
+                            • Deleting dockets
                         </p>
                         <div class="form-group" style="margin-bottom:16px;">
                             <label class="form-label">Current Password <span class="required">*</span></label>
@@ -1780,7 +1856,7 @@
     <script>
         // State
         var R = [], INV = [], sb = null, isOnline = false, docketCounter = 1;
-        var editingId = null, pendingId = null, pendingEditId = null, pendingTab = null;
+        var editingId = null, pendingId = null, pendingEditId = null;
         var ADMIN_PWD = localStorage.getItem('adminPwd') || 'admin123';
 
         // Hardcoded Supabase credentials
@@ -1799,12 +1875,6 @@
             document.querySelectorAll('.nav-tab').forEach(function(tab) {
                 tab.onclick = function() {
                     var tabName = tab.dataset.tab;
-                    if (tabName === 'inv') {
-                        pendingTab = 'inv';
-                        showModal('authModal');
-                        setTimeout(function() { document.getElementById('authPwd').focus(); }, 100);
-                        return;
-                    }
                     switchTab(tabName);
                 };
             });
@@ -1839,7 +1909,7 @@
             document.getElementById('deletePwd').onkeypress = function(e) { if(e.key==='Enter') confirmDelete(); };
             document.getElementById('closeCancelBtn').onclick = function() { hideModal('closeModal'); };
             document.getElementById('closeConfirmBtn').onclick = confirmClose;
-            document.getElementById('authCancelBtn').onclick = function() { hideModal('authModal'); document.getElementById('authPwd').value = ''; pendingEditId = null; pendingTab = null; };
+            document.getElementById('authCancelBtn').onclick = function() { hideModal('authModal'); document.getElementById('authPwd').value = ''; pendingEditId = null; };
             document.getElementById('authConfirmBtn').onclick = confirmAuth;
             document.getElementById('authPwd').onkeypress = function(e) { if(e.key==='Enter') confirmAuth(); };
 
@@ -1980,6 +2050,7 @@
             document.getElementById('view-'+tabName).classList.add('active');
             if (tabName === 'view') renderDockets();
             if (tabName === 'inv') renderInventory();
+            if (tabName === 'invdash') renderInventoryDashboard();
         }
 
         function setupToggle(id) {
@@ -2031,6 +2102,7 @@
             R.forEach(function(r) { if (r.status === 'closed') closed++; else open++; });
             document.getElementById('statOpen').textContent = open;
             document.getElementById('statClosed').textContent = closed;
+            renderInventoryDashboard();
         }
 
         function generateDocketNumber() {
@@ -2060,11 +2132,12 @@
             var item = INV.find(function(i) { return i.serial_number.toLowerCase() === serial.toLowerCase(); });
             if (!item) return;
             item.status = newStatus;
-            if (docketNum) item.used_for_docket = docketNum;
+            item.used_for_docket = docketNum || null;
             if (isOnline) {
                 try { await sb.from('inventory').update({status: newStatus, used_for_docket: docketNum || null}).eq('id', item.id); }
                 catch(e) { console.error(e); }
             }
+            renderInventoryDashboard();
         }
 
         // Database Functions
@@ -2089,6 +2162,7 @@
                 updateStats();
                 renderDockets();
                 renderInventory();
+                renderInventoryDashboard();
                 hideLoading();
             } catch(e) {
                 hideLoading();
@@ -2112,7 +2186,6 @@
                 hideModal('authModal');
                 document.getElementById('authPwd').value = '';
                 if (pendingEditId) { selectForEdit(pendingEditId); pendingEditId = null; }
-                if (pendingTab) { switchTab(pendingTab); pendingTab = null; }
             } else {
                 showToast('Wrong password!', true);
             }
@@ -2593,6 +2666,7 @@
                     hideLoading();
                     showToast('Added to inventory!');
                     renderInventory();
+                    renderInventoryDashboard();
                     document.getElementById('invCard').value = '';
                     document.getElementById('invSerial').value = '';
                     setToggleValue('invStatus', 'received');
@@ -2641,6 +2715,100 @@
 
             html += '</tbody></table>';
             container.innerHTML = html;
+        }
+
+        function getDashboardBucket(status) {
+            var normalized = (status || '').toLowerCase();
+            if (normalized === 'received' || normalized === 'receive') return 'received';
+            if (normalized === 'spare') return 'spare';
+            return null;
+        }
+
+        function renderInventoryDashboard() {
+            var summaryContainer = document.getElementById('invDashboardSummary');
+            var tableContainer = document.getElementById('invDashboardContainer');
+            if (!summaryContainer || !tableContainer) return;
+
+            var grouped = {};
+            var totals = {send_pending: 0, send: 0, received: 0, spare: 0};
+
+            function ensureGroup(cardName) {
+                var key = cardName.toLowerCase();
+                if (!grouped[key]) {
+                    grouped[key] = {card_name: cardName, send_pending: 0, send: 0, received: 0, spare: 0, total: 0};
+                }
+                return grouped[key];
+            }
+
+            // Send_Pending and Send come from open dockets based on send date value.
+            R.forEach(function(docket) {
+                var cardName = (docket.card_name || '').trim();
+                if (!cardName) return;
+
+                var isOpen = (docket.status || '').toLowerCase() === 'open';
+                var sendDate = (docket.send_date || '').toString().trim();
+                if (!isOpen) return;
+
+                var row = ensureGroup(cardName);
+                if (sendDate) {
+                    row.send += 1;
+                    totals.send += 1;
+                } else {
+                    row.send_pending += 1;
+                    totals.send_pending += 1;
+                }
+            });
+
+            // Receive and Spare come from inventory status.
+            INV.forEach(function(item) {
+                var cardName = (item.card_name || '').trim();
+                if (!cardName) return;
+                var bucket = getDashboardBucket(item.status);
+                if (!bucket) return;
+
+                var row = ensureGroup(cardName);
+                row[bucket] += 1;
+                totals[bucket] += 1;
+            });
+
+            summaryContainer.innerHTML =
+                '<div class="dashboard-metric send-pending"><div class="dashboard-metric-label">Send_Pending</div><div class="dashboard-metric-value">' + totals.send_pending + '</div></div>' +
+                '<div class="dashboard-metric send"><div class="dashboard-metric-label">Send</div><div class="dashboard-metric-value">' + totals.send + '</div></div>' +
+                '<div class="dashboard-metric received"><div class="dashboard-metric-label">Receive</div><div class="dashboard-metric-value">' + totals.received + '</div></div>' +
+                '<div class="dashboard-metric spare"><div class="dashboard-metric-label">Spare</div><div class="dashboard-metric-value">' + totals.spare + '</div></div>' +
+                '<div class="dashboard-metric total"><div class="dashboard-metric-label">Total (Excl Receive)</div><div class="dashboard-metric-value">' + (totals.send_pending + totals.send + totals.spare) + '</div></div>';
+
+            var rows = Object.keys(grouped).map(function(key) {
+                var row = grouped[key];
+                row.total = row.send_pending + row.send + row.spare;
+                return row;
+            }).filter(function(row) {
+                return row.send_pending > 0 || row.send > 0 || row.received > 0 || row.spare > 0;
+            })
+                .sort(function(a, b) { return a.card_name.localeCompare(b.card_name); });
+
+            if (!rows.length) {
+                tableContainer.innerHTML = '<div class="empty-state"><i class="fas fa-chart-column"></i><h3>No dashboard data available</h3></div>';
+                return;
+            }
+
+            var html = '<table style="min-width:860px"><thead><tr>' +
+                '<th>Card Name</th><th>Send_Pending</th><th>Send</th><th>Receive</th><th>Spare</th><th>Total</th>' +
+                '</tr></thead><tbody>';
+
+            rows.forEach(function(row) {
+                html += '<tr>' +
+                    '<td>' + escapeHtml(row.card_name) + '</td>' +
+                    '<td class="dashboard-count">' + row.send_pending + '</td>' +
+                    '<td class="dashboard-count">' + row.send + '</td>' +
+                    '<td class="dashboard-count">' + row.received + '</td>' +
+                    '<td class="dashboard-count">' + row.spare + '</td>' +
+                    '<td class="dashboard-count">' + row.total + '</td>' +
+                    '</tr>';
+            });
+
+            html += '</tbody></table>';
+            tableContainer.innerHTML = html;
         }
 
         // Print Functions
@@ -2743,3 +2911,4 @@
     </script>
 </body>
 </html>
+
