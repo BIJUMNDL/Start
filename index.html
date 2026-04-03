@@ -1794,6 +1794,25 @@
                         <button class="btn btn-primary btn-full" style="margin-top:0;" id="setPwdBtn"><i class="fas fa-key"></i>Change Password</button>
                     </div>
                 </div>
+                <div class="card" style="margin-top:24px;">
+                    <div class="card-header">
+                        <h2 class="card-title"><i class="fas fa-database"></i>Database Connection</h2>
+                    </div>
+                    <div class="card-body">
+                        <p style="color:var(--text-secondary);margin-bottom:24px;line-height:1.7;">
+                            Configure Supabase database connection. The app auto-connects on load using saved credentials.
+                        </p>
+                        <div class="form-group" style="margin-bottom:16px;">
+                            <label class="form-label">Supabase URL <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="configUrl" placeholder="https://your-project.supabase.co">
+                        </div>
+                        <div class="form-group" style="margin-bottom:24px;">
+                            <label class="form-label">Supabase Anon Key <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="configKey" placeholder="Enter anon key">
+                        </div>
+                        <button class="btn btn-primary btn-full" style="margin-top:0;" id="connectBtn"><i class="fas fa-plug"></i>Connect to Database</button>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
@@ -1856,7 +1875,7 @@
     <script>
         // State
         var R = [], INV = [], sb = null, isOnline = false, docketCounter = 1;
-        var editingId = null, pendingId = null, pendingEditId = null;
+        var editingId = null, pendingId = null, pendingEditId = null, pendingReopenId = null;
         var ADMIN_PWD = localStorage.getItem('adminPwd') || 'admin123';
 
         // Hardcoded Supabase credentials
@@ -1899,6 +1918,9 @@
             document.getElementById('invSearch').oninput = renderInventory;
             document.getElementById('invFilterStatus').onchange = renderInventory;
             document.getElementById('setPwdBtn').onclick = setPassword;
+            document.getElementById('connectBtn').onclick = connectSupabase;
+            document.getElementById('configUrl').value = SUPABASE_URL;
+            document.getElementById('configKey').value = SUPABASE_KEY;
             document.getElementById('printClosedBtn').onclick = printClosed;
             document.getElementById('printPendingBtn').onclick = printPending;
             document.getElementById('printInvBtn').onclick = printInventory;
@@ -1909,7 +1931,7 @@
             document.getElementById('deletePwd').onkeypress = function(e) { if(e.key==='Enter') confirmDelete(); };
             document.getElementById('closeCancelBtn').onclick = function() { hideModal('closeModal'); };
             document.getElementById('closeConfirmBtn').onclick = confirmClose;
-            document.getElementById('authCancelBtn').onclick = function() { hideModal('authModal'); document.getElementById('authPwd').value = ''; pendingEditId = null; };
+            document.getElementById('authCancelBtn').onclick = function() { hideModal('authModal'); document.getElementById('authPwd').value = ''; pendingEditId = null; pendingReopenId = null; };
             document.getElementById('authConfirmBtn').onclick = confirmAuth;
             document.getElementById('authPwd').onkeypress = function(e) { if(e.key==='Enter') confirmAuth(); };
 
@@ -2043,6 +2065,35 @@
         function formatDate(d) { if (!d) return '-'; return new Date(d).toLocaleDateString('en-US', {year:'numeric', month:'short', day:'numeric'}); }
         function escapeHtml(t) { var div = document.createElement('div'); div.textContent = t || ''; return div.innerHTML; }
 
+        // Local Storage Persistence (offline fallback)
+        function saveLocalData() {
+            try {
+                var localDockets = R.filter(function(r) { return String(r.id).startsWith('local-'); });
+                var localInv = INV.filter(function(i) { return String(i.id).startsWith('local-'); });
+                if (localDockets.length > 0) localStorage.setItem('offlineDockets', JSON.stringify(localDockets));
+                else localStorage.removeItem('offlineDockets');
+                if (localInv.length > 0) localStorage.setItem('offlineInventory', JSON.stringify(localInv));
+                else localStorage.removeItem('offlineInventory');
+            } catch(e) { console.error('Failed to save local data:', e); }
+        }
+
+        function loadLocalData() {
+            try {
+                var localDockets = JSON.parse(localStorage.getItem('offlineDockets') || '[]');
+                var localInv = JSON.parse(localStorage.getItem('offlineInventory') || '[]');
+                if (localDockets.length > 0) {
+                    localDockets.forEach(function(d) {
+                        if (!R.find(function(r) { return r.id === d.id; })) R.push(d);
+                    });
+                }
+                if (localInv.length > 0) {
+                    localInv.forEach(function(i) {
+                        if (!INV.find(function(inv) { return inv.id === i.id; })) INV.push(i);
+                    });
+                }
+            } catch(e) { console.error('Failed to load local data:', e); }
+        }
+
         function switchTab(tabName) {
             document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
             document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
@@ -2107,24 +2158,45 @@
 
         function generateDocketNumber() {
             var d = new Date();
-            var seq = String(docketCounter++).padStart(4, '0');
-            return 'NOK-' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + '-' + seq;
+            var dateStr = d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+            var num;
+            do {
+                var seq = String(docketCounter++).padStart(4, '0');
+                num = 'NOK-' + dateStr + '-' + seq;
+            } while (R.find(function(r) { return r.docket_number === num; }));
+            return num;
         }
 
         // Inventory Checks
         function checkSpare(cardName, serial) {
+            var serialLower = serial.toLowerCase();
+            var cardLower = cardName.toLowerCase();
+            // First try exact serial match with any card name (most permissive — serial is unique)
+            var bySerial = INV.find(function(i) {
+                return i.serial_number.toLowerCase() === serialLower && i.status === 'spare';
+            });
+            if (bySerial) return bySerial;
+            // Fallback: partial card name match + serial
             return INV.find(function(i) {
-                return i.card_name.toLowerCase() === cardName.toLowerCase() &&
-                       i.serial_number.toLowerCase() === serial.toLowerCase() &&
-                       i.status === 'spare';
+                var invCard = i.card_name.toLowerCase();
+                var cardMatch = invCard.includes(cardLower) || cardLower.includes(invCard);
+                return cardMatch && i.serial_number.toLowerCase() === serialLower && i.status === 'spare';
             });
         }
 
         function checkReceived(cardName, serial) {
+            var serialLower = serial.toLowerCase();
+            var cardLower = cardName.toLowerCase();
+            // First try exact serial match with any card name (serial is unique)
+            var bySerial = INV.find(function(i) {
+                return i.serial_number.toLowerCase() === serialLower && i.status === 'received';
+            });
+            if (bySerial) return bySerial;
+            // Fallback: partial card name match + serial
             return INV.find(function(i) {
-                return i.card_name.toLowerCase() === cardName.toLowerCase() &&
-                       i.serial_number.toLowerCase() === serial.toLowerCase() &&
-                       i.status === 'received';
+                var invCard = i.card_name.toLowerCase();
+                var cardMatch = invCard.includes(cardLower) || cardLower.includes(invCard);
+                return cardMatch && i.serial_number.toLowerCase() === serialLower && i.status === 'received';
             });
         }
 
@@ -2159,6 +2231,7 @@
                 docketCounter = maxCounter + 1;
                 isOnline = true;
                 setDbStatus(true);
+                loadLocalData();
                 updateStats();
                 renderDockets();
                 renderInventory();
@@ -2168,6 +2241,11 @@
                 hideLoading();
                 showToast('Connection failed: ' + e.message, true);
                 setDbStatus(false);
+                loadLocalData();
+                updateStats();
+                renderDockets();
+                renderInventory();
+                renderInventoryDashboard();
             }
         }
 
@@ -2186,6 +2264,7 @@
                 hideModal('authModal');
                 document.getElementById('authPwd').value = '';
                 if (pendingEditId) { selectForEdit(pendingEditId); pendingEditId = null; }
+                if (pendingReopenId) { reopenDocket(pendingReopenId); pendingReopenId = null; }
             } else {
                 showToast('Wrong password!', true);
             }
@@ -2218,10 +2297,10 @@
             var card = document.getElementById('addCard').value.trim();
             var faulty = document.getElementById('addFaulty').value.trim();
 
-            if (!booking || !site || !card || !faulty) {
-                showToast('Please fill all required fields', true);
-                return;
-            }
+            if (!booking) { showToast('Required: Date of Booking is missing', true); return; }
+            if (!site)    { showToast('Required: Site Name is missing', true); return; }
+            if (!card)    { showToast('Required: Card Name is missing', true); return; }
+            if (!faulty)  { showToast('Required: Faulty Serial Number is missing', true); return; }
 
             var spareSerial = document.getElementById('addSpare').value.trim();
             var replSerial = document.getElementById('addReplacement').value.trim();
@@ -2233,23 +2312,27 @@
                 return;
             }
 
-            // Validate spare card if provided
-            if (spareSerial && spareSerial.length > 0) {
-                var spareItem = checkSpare(card, spareSerial);
+            // Validate spare card if provided (only when DB is online and inventory is loaded)
+            var spareItem = null;
+            if (spareSerial && spareSerial.length > 0 && isOnline) {
+                spareItem = checkSpare(card, spareSerial);
                 if (!spareItem) {
-                    showToast('Spare card not found in inventory as "Spare" for: ' + card, true);
+                    showToast('Spare S/N "' + spareSerial + '" not found in inventory as Spare. Check serial or add to inventory first.', true);
                     return;
                 }
             }
 
             // Validate replacement card if provided
-            if (replSerial && replSerial.length > 0) {
-                var recvItem = checkReceived(card, replSerial);
+            var recvItem = null;
+            if (replSerial && replSerial.length > 0 && isOnline) {
+                recvItem = checkReceived(card, replSerial);
                 if (!recvItem) {
-                    showToast('Replacement card not found in inventory as "Received" for: ' + card, true);
+                    showToast('Replacement S/N "' + replSerial + '" not found in inventory as Received. Check serial or add to inventory first.', true);
                     return;
                 }
                 status = 'closed';
+            } else if (replSerial && replSerial.length > 0) {
+                status = 'closed'; // offline: trust what's entered
             }
 
             var docketNum = generateDocketNumber();
@@ -2285,11 +2368,23 @@
                     resetAddForm();
                 } catch(e) {
                     hideLoading();
-                    showToast('Error: ' + e.message, true);
+                    showToast('DB Error: ' + e.message + '. Saved locally only.', true);
+                    // Save locally as fallback
+                    record.id = 'local-' + Date.now();
+                    R.unshift(record);
+                    updateStats();
+                    saveLocalData();
+                    resetAddForm();
                 }
             } else {
+                // Offline: save locally so work is not lost
+                record.id = 'local-' + Date.now();
+                R.unshift(record);
+                updateStats();
+                saveLocalData();
                 hideLoading();
-                showToast('Database not connected', true);
+                showToast('⚠️ DB offline — Docket ' + docketNum + ' saved locally. Reconnect to sync.', true);
+                resetAddForm();
             }
         }
 
@@ -2338,6 +2433,12 @@
 
         function authForEdit(id) {
             pendingEditId = id;
+            showModal('authModal');
+            setTimeout(function() { document.getElementById('authPwd').focus(); }, 100);
+        }
+
+        function authForReopen(id) {
+            pendingReopenId = id;
             showModal('authModal');
             setTimeout(function() { document.getElementById('authPwd').focus(); }, 100);
         }
@@ -2445,10 +2546,11 @@
                     if (replSerial && original.status === 'open' && newStatus === 'closed') {
                         await updateInventoryStatus(replSerial, 'spare', null);
                     }
+                    var previousStatus = original.status;
                     Object.assign(original, updateData);
                     updateStats();
                     hideLoading();
-                    showToast('Docket updated!' + (newStatus === 'closed' && original.status === 'open' ? ' Docket closed!' : ''));
+                    showToast('Docket updated!' + (newStatus === 'closed' && previousStatus === 'open' ? ' Docket closed!' : ''));
                     goBack();
                 } catch(e) {
                     hideLoading();
@@ -2494,7 +2596,7 @@
                 var actions = '<div class="action-buttons">';
                 actions += r.status === 'open' ?
                     '<button class="action-btn close" onclick="showCloseModal(\'' + r.id + '\')">Close</button>' :
-                    '<button class="action-btn reopen" onclick="reopenDocket(\'' + r.id + '\')">Reopen</button>';
+                    '<button class="action-btn reopen" onclick="authForReopen(\'' + r.id + '\')">Reopen</button>';
                 actions += '<button class="action-btn edit" onclick="goToEdit(\'' + r.id + '\')">Edit</button>';
                 actions += '<button class="action-btn delete" onclick="showDeleteModal(\'' + r.id + '\')">Delete</button></div>';
 
@@ -2506,8 +2608,8 @@
                     '<td>' + escapeHtml(r.card_name) + '</td>' +
                     '<td><span class="badge ' + r.criticality + '">' + r.criticality + '</span></td>' +
                     '<td>' + escapeHtml(r.faulty_serial) + '</td>' +
-                    '<td>' + (r.spare_serial || '-') + '</td>' +
-                    '<td>' + (r.replacement_serial || '-') + '</td>' +
+                    '<td>' + escapeHtml(r.spare_serial || '-') + '</td>' +
+                    '<td>' + escapeHtml(r.replacement_serial || '-') + '</td>' +
                     '<td>' + actions + '</td></tr>';
             });
 
@@ -2700,17 +2802,25 @@
 
             filtered.sort(function(a, b) { return new Date(b.receipt_date) - new Date(a.receipt_date); });
 
-            var html = '<table style="min-width:700px"><thead><tr>' +
-                '<th>Receipt Date</th><th>Card Name</th><th>Serial Number</th><th>Status</th><th>Used For</th>' +
+            var html = '<table style="min-width:800px"><thead><tr>' +
+                '<th>Receipt Date</th><th>Card Name</th><th>Serial Number</th><th>Status</th><th>Used For</th><th>Actions</th>' +
                 '</tr></thead><tbody>';
 
             filtered.forEach(function(i) {
+                var invActions = '<div class="action-buttons">';
+                if (i.status !== 'used') {
+                    var nextStatus = i.status === 'received' ? 'spare' : 'received';
+                    invActions += '<button class="action-btn edit" onclick="changeInvStatus(\'' + i.id + '\', \'' + nextStatus + '\')">' + nextStatus.charAt(0).toUpperCase() + nextStatus.slice(1) + '</button>';
+                }
+                invActions += '<button class="action-btn delete" onclick="deleteInventory(\'' + i.id + '\')">Delete</button></div>';
+
                 html += '<tr>' +
                     '<td>' + formatDate(i.receipt_date) + '</td>' +
                     '<td>' + escapeHtml(i.card_name) + '</td>' +
                     '<td style="font-family:monospace;font-weight:600;">' + escapeHtml(i.serial_number) + '</td>' +
                     '<td><span class="badge ' + i.status + '">' + i.status + '</span></td>' +
-                    '<td>' + (i.used_for_docket || '-') + '</td></tr>';
+                    '<td>' + (i.used_for_docket || '-') + '</td>' +
+                    '<td>' + invActions + '</td></tr>';
             });
 
             html += '</tbody></table>';
@@ -2722,6 +2832,52 @@
             if (normalized === 'received' || normalized === 'receive') return 'received';
             if (normalized === 'spare') return 'spare';
             return null;
+        }
+
+        async function deleteInventory(id) {
+            var item = INV.find(function(i) { return i.id == id; });
+            if (!item) return;
+            if (item.status === 'used') {
+                showToast('Cannot delete a used inventory item — it is linked to a docket.', true);
+                return;
+            }
+            if (!confirm('Delete inventory item "' + item.serial_number + '"?')) return;
+
+            if (isOnline && !String(id).startsWith('local-')) {
+                try {
+                    var {error} = await sb.from('inventory').delete().eq('id', id);
+                    if (error) throw error;
+                } catch(e) {
+                    showToast('Error: ' + e.message, true);
+                    return;
+                }
+            }
+            INV = INV.filter(function(i) { return i.id != id; });
+            saveLocalData();
+            renderInventory();
+            renderInventoryDashboard();
+            showToast('Inventory item deleted');
+        }
+
+        async function changeInvStatus(id, newStatus) {
+            var item = INV.find(function(i) { return i.id == id; });
+            if (!item) return;
+
+            if (isOnline && !String(id).startsWith('local-')) {
+                try {
+                    var {error} = await sb.from('inventory').update({status: newStatus, used_for_docket: null}).eq('id', id);
+                    if (error) throw error;
+                } catch(e) {
+                    showToast('Error: ' + e.message, true);
+                    return;
+                }
+            }
+            item.status = newStatus;
+            item.used_for_docket = null;
+            saveLocalData();
+            renderInventory();
+            renderInventoryDashboard();
+            showToast('Status changed to ' + newStatus);
         }
 
         function renderInventoryDashboard() {
